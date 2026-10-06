@@ -54,8 +54,9 @@ hr{border:0;border-top:1px solid var(--bd);margin:12px 0}
 #lib h1{font:600 26px Georgia,serif;margin:0;letter-spacing:-.3px}
 #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:26px 20px}
 .card{position:relative;cursor:pointer}
-.cv{aspect-ratio:2/3;border-radius:4px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.25),0 6px 14px rgba(0,0,0,.12);display:flex;align-items:flex-end;padding:10px;font:600 13px Georgia,serif;color:#fff}
-.cv img{width:100%;height:100%;object-fit:cover;margin:-10px}
+.cv{position:relative;aspect-ratio:2/3;border-radius:4px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.25),0 6px 14px rgba(0,0,0,.12);display:flex;align-items:flex-end;font:600 13px Georgia,serif;color:#fff}
+.cv img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cvt{padding:10px;position:relative}
 .card b{display:block;margin-top:8px;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .card small{color:var(--mut);font-size:12px}
 .bar{height:2px;background:var(--bd);margin-top:5px}.bar i{display:block;height:100%;background:var(--mut)}
@@ -100,7 +101,8 @@ hr{border:0;border-top:1px solid var(--bd);margin:12px 0}
   <div class="pop" id="ghpan" style="position:fixed;top:70px;right:20px;width:280px">
     <div class="field"><b>github repo</b></div>
     <input id="gh-repo" placeholder="owner/repo" style="font:13px inherit;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg)">
-    <input id="gh-tok" type="password" placeholder="fine-grained PAT (repo scope)" style="font:13px inherit;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg);margin-top:6px">
+    <input id="gh-tok" type="password" placeholder="fine-grained PAT (Contents: R/W)" style="font:13px inherit;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg);margin-top:6px">
+    <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);margin-top:4px;display:block">need a token? create one &rarr;</a>
     <button id="gh-save" style="margin-top:6px">save</button>
     <hr>
     <div class="row"><button id="gh-push">push ↑</button><button id="gh-pull">pull ↓</button></div>
@@ -110,7 +112,7 @@ hr{border:0;border-top:1px solid var(--bd);margin:12px 0}
   <div id="empty" hidden>no books yet. drop an epub or pdf anywhere, or hit add.</div>
 </div>
 <div id="rd">
-  <div id="top"><button id="bk">&lsaquo; library</button><span id="tt"></span><button id="tb">contents</button><button id="ab">Aa</button></div>
+  <div id="top"><button id="bk">&lsaquo; library</button><span id="tt"></span><button id="tb">contents</button><button id="zb" title="fullscreen (z)">⤢</button><button id="ab">Aa</button></div>
   <div class="pop" id="toc"></div>
   <div class="pop" id="pan">
     <div class="row"><button class="t-light" data-t="light">light</button><button class="t-warm" data-t="warm">warm</button><button class="t-night" data-t="night">night</button></div>
@@ -241,7 +243,7 @@ async function lib(){
   const g=$('#grid');g.innerHTML='';$('#empty').hidden=ms.length>0;
   ms.forEach(m=>{const c=document.createElement('div');c.className='card';
     const h=[...m.title].reduce((a,ch)=>a+ch.charCodeAt(0),0)%360;
-    c.innerHTML=`<div class="cv" style="background:hsl(${h} 25% 38%)">${m.cover?`<img src="${m.cover}" alt="">`:''}${m.cover?'':esc(m.title)}</div><b>${esc(m.title)}</b><small>${esc(m.author||m.type)}</small><div class="bar"><i style="width:${Math.round((m.pct||0)*100)}%"></i></div><button class="x" title="remove">&times;</button>`;
+    c.innerHTML=`<div class="cv" style="background:hsl(${h} 25% 38%)">${m.cover?`<img src="${m.cover}" alt="">`:`<span class="cvt">${esc(m.title)}</span>`}</div><b>${esc(m.title)}</b><small>${esc(m.author||m.type)}</small><div class="bar"><i style="width:${Math.round((m.pct||0)*100)}%"></i></div><button class="x" title="remove">&times;</button>`;
     c.onclick=()=>openBook(m.id);
     c.querySelector('.x').onclick=async e=>{e.stopPropagation();if(confirm('remove "'+m.title+'"?')){await tx('m','readwrite',s=>s.delete(m.id));await tx('d','readwrite',s=>s.delete(m.id));lib()}};
     g.appendChild(c)})}
@@ -289,7 +291,7 @@ async function openEpub(buf){
     c.document.head.appendChild(st);applyC(c)});
   applyAll();syncPanel();
   rend.on('relocated',l=>{cur.pct=book.locations.length()?book.locations.percentageFromCfi(l.start.cfi):cur.pct;cur.pos=l.start.cfi;putM(cur);upd()});
-  rend.on('click',e=>{if(e.target.closest&&e.target.closest('a'))return;closeDef();zone(e.clientX,(e.view||window).innerWidth)});
+  rend.on('click',e=>{if(e.target.closest&&e.target.closest('a'))return;const w=e.view||window;if((w.getSelection()+'').trim())return;closeDef();zone(e.clientX,w.innerWidth)});
   rend.on('selected',onSelect);
   rend.on('relocated',()=>closeDef());
   rend.on('keydown',key);
@@ -297,15 +299,39 @@ async function openEpub(buf){
   book.loaded.navigation.then(n=>{const t=$('#toc');const add=(items,l)=>items.forEach(i=>{const a=document.createElement('a');a.textContent=i.label.trim();a.style.paddingLeft=(8+l*14)+'px';a.onclick=()=>{rend.display(i.href);closePops()};t.appendChild(a);if(i.subitems)add(i.subitems,l+1)});add(n.toc,0)});
   book.ready.then(()=>book.locations.generate(1200)).then(()=>{$('#sc').disabled=false;upd()}).catch(()=>{})}
 async function openPdf(buf){pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;pg=Math.min(cur.pos||1,pdf.numPages);$('#sc').min=1;$('#sc').max=pdf.numPages;$('#sc').disabled=false;draw()}
+let drawId=0;
 async function draw(){
   if(!pdf)return;if(rt)try{rt.cancel()}catch(e){}
   closeDef();
-  const p=await pdf.getPage(pg),b=$('#pw').getBoundingClientRect(),v0=p.getViewport({scale:1}),sc=Math.min(b.width/v0.width,b.height/v0.height),r=devicePixelRatio||1,v=p.getViewport({scale:sc*r}),vcss=p.getViewport({scale:sc}),c=$('#cv');
+  const my=++drawId; // render-generation guard: a stale call bails out instead of overwriting newer content
+  const p=await pdf.getPage(pg);if(my!==drawId)return;
+  const b=$('#pw').getBoundingClientRect(),v0=p.getViewport({scale:1}),sc=Math.min(b.width/v0.width,b.height/v0.height),r=devicePixelRatio||1,v=p.getViewport({scale:sc*r}),vcss=p.getViewport({scale:sc}),c=$('#cv');
   c.width=v.width;c.height=v.height;c.style.width=vcss.width+'px';c.style.height=vcss.height+'px';
   rt=p.render({canvasContext:c.getContext('2d'),viewport:v});try{await rt.promise}catch(e){return}
-  const tl=$('#tl');tl.innerHTML='';tl.style.width=vcss.width+'px';tl.style.height=vcss.height+'px';tl.style.setProperty('--scale-factor',sc);
-  try{const tc=await p.getTextContent();pdfjsLib.renderTextLayer({textContentSource:tc,container:tl,viewport:vcss})}catch(e){}
+  if(my!==drawId)return;
+  const tl=$('#tl');tl.innerHTML='';tl.style.width=vcss.width+'px';tl.style.height=vcss.height+'px';
+  try{const tc=await p.getTextContent();if(my!==drawId)return;buildTextLayer(tl,tc,vcss)}catch(e){}
   cur.pos=pg;cur.pct=pg/pdf.numPages;putM(cur);upd()}
+/* build the selectable text layer ourselves from raw glyph transforms (getTextContent + viewport.transform),
+   the same source data the canvas was drawn from -- skips pdf.js's renderTextLayer font-metric reconstruction,
+   which is what drifts out of alignment on heavily-justified text */
+function buildTextLayer(tl,tc,viewport){
+  const frag=document.createDocumentFragment(),spans=[];
+  for(const item of tc.items){
+    if(!item.str)continue;
+    const tx=pdfjsLib.Util.transform(viewport.transform,item.transform);
+    const angle=Math.atan2(tx[1],tx[0]),fontHeight=Math.hypot(tx[2],tx[3]);
+    const style=(tc.styles&&tc.styles[item.fontName])||{};
+    const span=document.createElement('span');
+    span.textContent=item.str;
+    span.style.left=tx[4]+'px';span.style.top=(tx[5]-fontHeight)+'px';span.style.fontSize=fontHeight+'px';
+    span.style.fontFamily=style.fontFamily||'sans-serif';
+    if(angle)span.style.transform='rotate('+angle+'rad)';
+    frag.appendChild(span);spans.push([span,item.width*viewport.scale])}
+  tl.appendChild(frag);
+  // nudge each span's horizontal scale so the fallback font's rendered width matches the pdf's real glyph
+  // run width -- keeps word boundaries aligned even without the exact embedded font available in-browser
+  for(const[span,targetW]of spans){const w=span.offsetWidth;if(w>0&&targetW>0)span.style.transform=(span.style.transform||'')+' scaleX('+(targetW/w)+')'}}
 document.addEventListener('mouseup',pdfSelCheck);document.addEventListener('touchend',()=>setTimeout(pdfSelCheck,10));
 function pdfSelCheck(e){
   if(!cur||cur.type!=='pdf'||rd.style.display!=='flex')return;
@@ -321,12 +347,20 @@ $('#sc').onchange=e=>{const v=+e.target.value;
 const next=()=>{if(cur.type==='pdf'){if(pg<pdf.numPages){pg++;draw()}}else rend.next()};
 const prev=()=>{if(cur.type==='pdf'){if(pg>1){pg--;draw()}}else rend.prev()};
 function zone(x,w){const r=x/w;closePops();if(r<.3)prev();else if(r>.7)next();else rd.classList.toggle('ch')}
-$('#stage').onclick=e=>{if(e.target.closest('#viewer')||e.target.closest('#tl'))return;zone(e.clientX,innerWidth)};
+$('#stage').onclick=e=>{if(e.target.closest('#viewer'))return;if((window.getSelection()+'').trim())return;zone(e.clientX,innerWidth)};
 function closePops(){$('#toc').classList.remove('o');$('#pan').classList.remove('o');closeDef()}
 $('#tb').onclick=()=>{$('#pan').classList.remove('o');$('#toc').classList.toggle('o')};
 $('#ab').onclick=()=>{$('#toc').classList.remove('o');$('#pan').classList.toggle('o')};
 $('#bk').onclick=back;
 document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>setTheme(b.dataset.t));
+/* real browser fullscreen for an immersive reading mode -- distinct from 'm', which just hides our own chrome bars */
+function toggleFS(){
+  if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+    const el=document.documentElement,req=el.requestFullscreen||el.webkitRequestFullscreen;
+    if(req)req.call(el).catch(()=>toast('fullscreen blocked by the browser'));else toast('fullscreen not supported here')
+  }else{(document.exitFullscreen||document.webkitExitFullscreen).call(document)}}
+$('#zb').onclick=toggleFS;
+const jump=d=>{if(cur.type==='pdf'){pg=d<0?1:pdf.numPages;draw()}else rend[d<0?'display':'display'](d<0?undefined:book.spine.last().href)};
 
 /* keys: arrows + vim + space, t theme, +/- size, m menu, esc back */
 function key(e){
@@ -339,7 +373,7 @@ function key(e){
   else h=false;
   if(h&&e.preventDefault)e.preventDefault()}
 document.addEventListener('keydown',key);
-addEventListener('resize',()=>{if(cur&&cur.type==='pdf'&&pdf)draw()});
+let rsz;addEventListener('resize',()=>{clearTimeout(rsz);rsz=setTimeout(()=>{if(cur&&cur.type==='pdf'&&pdf)draw()},120)});
 
 /* github sync — client-side only, PAT lives in localStorage on this device. self-host before using. */
 let GH={};try{GH=JSON.parse(localStorage.getItem('gh')||'{}')}catch(e){}
