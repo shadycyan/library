@@ -19,6 +19,7 @@ epub.js 0.3.93 (from jsdelivr: cdnjs only has the old 0.2.x), pdf.js 3.11.174, J
 - search in book (`/`), offline word definitions (`d` or select a word in an epub), epub highlights
 - library states: unread / reading / finished (`e`, or automatic at 98%), filter (`f`) and sort (`o`), synced
 - anonymous books (`p`): alias + plain cover on screen, synced across devices
+- android back button: closes popups first, then returns to the library, then leaves the app
 - swipe to turn pages, tap shows or hides the bars; every action has a key, `?` lists them
 - phone layout under 760px (one-row bar, overflow menu, bottom sheets)
 - auto-sync: on load, on closing a book, when the tab hides/shows, when back online, every 5 min

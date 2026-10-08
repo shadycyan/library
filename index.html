@@ -696,6 +696,21 @@ sq.onkeydown=e=>{
   if(e.key==='Escape'){sq.blur();$('#sr').classList.remove('o');srTok++;return}
   if(e.key==='Enter'){const q=sq.value.trim();if(q.length<2)return;sq.blur();doSearch(q)}};
 
+/* android back button: while the reader or any popup is open there is exactly one extra history entry, so back closes popups first,
+   then returns to the library, then (from the library) leaves the app. the entry is added/removed automatically as the UI changes. */
+let trap=false,trapIgnore=false,trapT;
+const needTrap=()=>rd.style.display==='flex'||!!anyPop();
+function syncTrap(){
+  if(trapIgnore){setTimeout(syncTrap,50);return}
+  const need=needTrap();
+  if(need&&!trap){history.pushState({reader:1},'');trap=true}
+  else if(!need&&trap){trap=false;trapIgnore=true;setTimeout(()=>{trapIgnore=false},600);history.back()}}
+addEventListener('popstate',()=>{
+  if(trapIgnore){trapIgnore=false;return}
+  trap=false; // the browser already removed our entry
+  if(anyPop())closeAll();else if(rd.style.display==='flex')back();
+  setTimeout(syncTrap,0)});
+new MutationObserver(()=>{clearTimeout(trapT);trapT=setTimeout(syncTrap,30)}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class','style']});
 setTheme(S.theme);syncPanel();
 syncUI();autoSync();
 lib().catch(()=>{toast('storage unavailable, books cannot be saved here');$('#empty').hidden=false});
