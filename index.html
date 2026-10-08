@@ -114,12 +114,36 @@ button:active{transform:none}
 .card.sel .cv{outline:2px solid var(--fg);outline-offset:3px}.card.sel b{text-decoration:underline}
 #rd.nostat:not(.ch) #bot{display:none}
 #hint{position:fixed;left:0;right:0;bottom:0;padding:6px 14px;color:var(--mut);font:11px var(--mono);border-top:1px solid var(--bd);background:var(--bg)}
-@media(max-width:760px){#tt{display:none}#top{flex-wrap:wrap}}
+#lbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:-8px 0 22px}#lbar .seg{flex:0 1 auto}#lbar .seg button{white-space:nowrap;padding:6px 10px}.card small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dn{position:absolute;top:34px;left:4px;padding:0 6px;line-height:20px;background:rgba(0,0,0,.55);color:#fff;border:0;opacity:0}.card:hover .dn,.dn:focus{opacity:1}@media(hover:none){.dn{opacity:.8}}.card.done .dn{opacity:1;background:var(--fg);color:var(--bg)}
+i.k,i.w,i.m{font-style:normal}.m{display:none}
+@media(max-width:760px){
+ .k,.w{display:none}.m{display:inline-block}
+ #top{flex-wrap:wrap;gap:6px;padding-left:8px;padding-right:8px}
+ #top button{min-height:38px;padding:6px 12px;font-size:14px}
+ #tt{display:block;font-size:13px}
+ #sb,#zb,#hb{display:none}
+ #sq,#lk{display:none;font-size:16px;padding:8px 10px}
+ #top.qa #sq,#top.qb #lk{display:block;order:9;flex:1 0 100%;width:100%}
+ #toc,#pan,#sr,#hl,#ghpan{left:8px!important;right:8px!important;width:auto!important;max-width:none!important;top:calc(54px + env(safe-area-inset-top,0px))!important}
+ #ghpan{position:fixed!important}
+ #more{right:8px;left:auto;width:240px;top:calc(54px + env(safe-area-inset-top,0px))}
+ #more button{width:100%;text-align:left;min-height:40px;margin:0 0 4px}
+ #lib{padding:20px 14px 40px}
+ #lib header{flex-wrap:wrap;gap:12px;align-items:center}
+ #lib header button{white-space:nowrap;min-height:38px;padding:6px 14px}
+ #lib header button[onclick^="toggleHelp"]{display:none}
+ #hint{display:none}
+ #grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:20px 14px}
+ .an,.x,.dn{line-height:28px;padding:0 9px}.dn{top:40px}
+ button{touch-action:manipulation}
+}
 </style>
 </head>
 <body>
 <div id="lib">
-  <header><h1>library</h1><div style="display:flex;gap:8px"><button onclick="toggleHelp()">[?] help</button><button id="ghbtn">[s] sync</button><label><button onclick="this.nextElementSibling.click()">[a] add books</button><input type="file" id="file" accept=".epub,.pdf,application/epub+zip,application/pdf" multiple hidden></label></div></header>
+  <header><h1>library</h1><div style="display:flex;gap:8px"><button onclick="toggleHelp()"><i class="k">[?] </i>help</button><button id="ghbtn"><i class="k">[s] </i>sync</button><label><button onclick="this.nextElementSibling.click()"><i class="k">[a] </i>add books</button><input type="file" id="file" accept=".epub,.pdf,application/epub+zip,application/pdf" multiple hidden></label></div></header>
+  <div id="lbar"><div class="seg" id="lfil"><button data-f="all">all</button><button data-f="reading">reading</button><button data-f="unread">unread</button><button data-f="done">finished</button></div><button id="lsort"></button></div>
   <div class="pop" id="ghpan" style="position:fixed;top:70px;right:20px;width:280px">
     <div class="field"><b>github repo</b></div>
     <input id="gh-repo" placeholder="owner/repo" style="font:13px inherit;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg)">
@@ -131,12 +155,13 @@ button:active{transform:none}
     <div id="gh-stat" class="field" style="text-align:center"></div>
   </div>
   <div id="grid"></div>
-  <div id="hint">h j k l move &middot; enter open &middot; x remove &middot; a add &middot; s sync &middot; p anon &middot; t theme &middot; ? help</div>
+  <div id="hint">h j k l move &middot; enter open &middot; x remove &middot; a add &middot; s sync &middot; p anon &middot; f filter &middot; o sort &middot; e finished &middot; t theme &middot; ? help</div>
   <div id="empty" hidden>no books yet. drop an epub or pdf anywhere, or press [a].</div>
 </div>
 <div id="rd">
-  <div id="top"><button id="bk">[esc] library</button><span id="tt"></span><input id="sq" placeholder="[/] search book" autocomplete="off" spellcheck="false"><input id="lk" placeholder="[d] define word" autocomplete="off" spellcheck="false"><button id="tb">[c] contents</button><button id="sb">[b] status bar</button><button id="zb">[z] fullscreen</button><button id="ab">[a] appearance</button><button id="hb">[?] help</button></div>
+  <div id="top"><button id="bk"><i class="k">[esc] </i><i class="w">library</i><i class="m">‹</i></button><span id="tt"></span><input id="sq" placeholder="[/] search book" autocomplete="off" spellcheck="false"><input id="lk" placeholder="[d] define word" autocomplete="off" spellcheck="false"><button id="tb"><i class="k">[c] </i><i class="w">contents</i><i class="m">toc</i></button><button id="sb"><i class="k">[b] </i>status bar</button><button id="zb"><i class="k">[z] </i>fullscreen</button><button id="ab"><i class="k">[a] </i><i class="w">appearance</i><i class="m">Aa</i></button><button id="hb"><i class="k">[?] </i>help</button><button id="mb" class="m">⋯</button></div>
   <div class="pop" id="toc"></div>
+  <div class="pop" id="more"><button data-a="sq">search in book</button><button data-a="lk">define a word</button><button data-a="hl">highlights</button><button data-a="sb">status bar on / off</button><button data-a="zb">fullscreen</button><button data-a="an">anonymous on / off</button><button data-a="dn">finished on / off</button><button data-a="hb">help</button></div>
   <div class="pop" id="hl" style="left:12px;right:auto;width:520px;max-width:92vw;gap:0"></div>
   <div class="pop" id="sr" style="left:12px;right:auto;width:520px;max-width:92vw;gap:0"></div>
   <div class="pop" id="pan">
@@ -172,6 +197,8 @@ button:active{transform:none}
   x                  remove       a       add books
   s                  sync         t       cycle theme
   p                  anonymous    P       set shown name
+  f                  filter       o       sort order
+  e                  finished on/off
   1 2 3              light / warm / night
 
  reading
@@ -182,6 +209,7 @@ button:active{transform:none}
   d         define a word (also: select a word in an epub)
   H         highlight selection (epub)   v   list highlights
   p         anonymous on/off   P   set the shown name
+  e         finished on/off (also set automatically at 98%)
   c         contents          a   appearance panel
   m         top bar           b   status bar (oled: off)
   z         fullscreen        t   cycle theme
@@ -291,14 +319,23 @@ function showDef(word,rec,x,y){
 dictStat();
 
 /* library */
+const stOf=m=>m.done?'done':((m.opened||m.pct>0)?'reading':'unread');
+const SORTS=['recent','title','progress','added'];
+S.lfilter=S.lfilter||'all';S.lsort=S.lsort||'recent';
 async function lib(){
-  const ms=(await tx('m','readonly',s=>s.getAll())).sort((a,b)=>(b.opened||0)-(a.opened||0)||b.added-a.added);
+  const all=await tx('m','readonly',s=>s.getAll());
+  const cnt={all:all.length,reading:0,unread:0,done:0};all.forEach(m=>cnt[stOf(m)]++);
+  document.querySelectorAll('#lfil button').forEach(b=>{const f=b.dataset.f;b.textContent=(f==='done'?'finished':f)+' '+cnt[f];b.classList.toggle('on',f===S.lfilter)});
+  $('#lsort').innerHTML='<i class="k">[o] </i>sort: '+S.lsort;
+  const cmp={recent:(a,b)=>(b.opened||0)-(a.opened||0)||b.added-a.added,title:(a,b)=>dn(a).localeCompare(dn(b)),progress:(a,b)=>(b.pct||0)-(a.pct||0),added:(a,b)=>b.added-a.added}[S.lsort];
+  const ms=all.filter(m=>S.lfilter==='all'||stOf(m)===S.lfilter).sort(cmp);
   const g=$('#grid');g.innerHTML='';$('#empty').hidden=ms.length>0;
-  ms.forEach(m=>{const c=document.createElement('div');c.className='card'+(m.anon?' anon':'');c.dataset.id=m.id;
-    const h=[...dn(m)].reduce((a,ch)=>a+ch.charCodeAt(0),0)%360;
-    c.innerHTML=`<div class="cv" style="background:hsl(${h} 25% 38%)">${m.cover&&!m.anon?`<img src="${m.cover}" alt="">`:`<span class="cvt">${esc(dn(m))}</span>`}</div><b>${esc(dn(m))}</b><small>${esc(m.anon?m.type:(m.author||m.type))}</small><div class="bar"><i style="width:${Math.round((m.pct||0)*100)}%"></i></div><button class="an" title="anonymous on/off (p)">[p]</button><button class="x" title="remove">&times;</button>`;
+  $('#empty').textContent=all.length?'nothing in this filter. press [f] to change it.':'no books yet. drop an epub or pdf anywhere, or press [a].';
+  ms.forEach(m=>{const c=document.createElement('div');c.className='card'+(m.anon?' anon':'')+(m.done?' done':'');c.dataset.id=m.id;
+    const h=[...dn(m)].reduce((a,ch)=>a+ch.charCodeAt(0),0)%360;const stl={done:'finished',unread:'new',reading:Math.round((m.pct||0)*100)+'%'}[stOf(m)];
+    c.innerHTML=`<div class="cv" style="background:hsl(${h} 25% 38%)">${m.cover&&!m.anon?`<img src="${m.cover}" alt="">`:`<span class="cvt">${esc(dn(m))}</span>`}</div><b>${esc(dn(m))}</b><small>${stl} &middot; ${esc(m.anon?m.type:(m.author||m.type))}</small><div class="bar"><i style="width:${Math.round((m.pct||0)*100)}%"></i></div><button class="an" title="anonymous on/off (p)">[p]</button><button class="dn" title="finished on/off (e)">&#10003;</button><button class="x" title="remove">&times;</button>`;
     c.onclick=()=>openBook(m.id);
-    c.querySelector('.an').onclick=e=>{e.stopPropagation();toggleAnon(m.id)};c.querySelector('.x').onclick=async e=>{e.stopPropagation();if(confirm('remove "'+dn(m)+'"?')){await tx('m','readwrite',s=>s.delete(m.id));await tx('d','readwrite',s=>s.delete(m.id));lib()}};
+    c.querySelector('.an').onclick=e=>{e.stopPropagation();toggleAnon(m.id)};c.querySelector('.dn').onclick=e=>{e.stopPropagation();toggleDone(m.id)};c.querySelector('.x').onclick=async e=>{e.stopPropagation();if(confirm('remove "'+dn(m)+'"?')){await tx('m','readwrite',s=>s.delete(m.id));await tx('d','readwrite',s=>s.delete(m.id));lib()}};
     g.appendChild(c)})}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 /* anonymous books: the shown name + generic cover replace the real ones everywhere on screen. real title is kept for un-hiding */
@@ -316,6 +353,17 @@ async function toggleAnon(id,edit){
   if(live)showTitle();
   await lib();if(selId){const c=document.querySelector('.card[data-id="'+selId+'"]');c&&c.classList.add('sel')}
   toast(m.anon?'anonymous: '+m.alias:'real name restored');autoSync()}
+/* library states: unread / reading / finished (finished = done flag, set by hand or automatically at 98%; newest change wins when synced) */
+const relib=async()=>{const s=document.querySelector('.card.sel'),id=s&&s.dataset.id;await lib();if(id){const c=document.querySelector('.card[data-id="'+id+'"]');c&&c.classList.add('sel')}};
+function cycleFilter(){const f=['all','reading','unread','done'];S.lfilter=f[(f.indexOf(S.lfilter)+1)%4];save();lib()}
+function cycleSort(){S.lsort=SORTS[(SORTS.indexOf(S.lsort)+1)%SORTS.length];save();lib()}
+document.querySelectorAll('#lfil button').forEach(b=>b.onclick=()=>{S.lfilter=b.dataset.f;save();lib()});
+$('#lsort').onclick=cycleSort;
+async function toggleDone(id){
+  const live=cur&&id===cur.id&&rd.style.display==='flex',m=live?cur:await getM(id);if(!m)return;
+  m.done=!m.done;m.dAuto=true;m.du=Date.now();await putM(m);
+  await relib();toast(m.done?'marked finished':'marked not finished');autoSync()}
+function autoFin(){if(cur&&!cur.done&&!cur.dAuto&&(cur.pct||0)>=.98){cur.done=true;cur.dAuto=true;cur.du=Date.now();toast('marked finished')}}
 /* covers: built locally from the book file (never synced), so any device can make them. used by add-books and by the backfill below */
 const thumb=url=>new Promise(res=>{const i=new Image();i.onload=()=>{const s=Math.min(1,240/i.width),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.75))};i.onerror=()=>res(url);i.src=url});
 async function coverOf(buf,type){
@@ -378,7 +426,7 @@ async function openEpub(buf){
     st.textContent='html,body{background:var(--bg)!important;color:var(--fg)!important;line-height:var(--lh)!important}body *{color:inherit!important;background-color:transparent!important}body,body *:not(pre):not(code){font-family:var(--ff)!important;font-weight:var(--fw)!important;letter-spacing:var(--ls)!important;word-spacing:var(--ws)!important;text-align:var(--jt)!important}p,li{margin-bottom:var(--ps)!important}a,a *{color:var(--ln)!important;font-weight:var(--fw)!important}img,svg{max-width:100%!important}';
     c.document.head.appendChild(st);applyC(c);addSwipe(c.document)});
   applyAll();syncPanel();
-  rend.on('relocated',l=>{cur.pct=book.locations.length()?book.locations.percentageFromCfi(l.start.cfi):cur.pct;cur.pos=l.start.cfi;cur.pu=Date.now();putM(cur);upd()});
+  rend.on('relocated',l=>{cur.pct=book.locations.length()?book.locations.percentageFromCfi(l.start.cfi):cur.pct;cur.pos=l.start.cfi;cur.pu=Date.now();autoFin();putM(cur);upd()});
   rend.on('click',e=>{if(e.target.closest&&e.target.closest('a'))return;const w=e.view||window;if((w.getSelection()+'').trim())return;closeDef();zone(e.clientX,w.innerWidth)});
   rend.on('selected',onSelect);rend.on('rendered',()=>hlSoon(120));rend.on('resized',()=>hlSoon(150));
   rend.on('relocated',()=>{closeDef();hlSoon(250)});
@@ -397,7 +445,7 @@ async function draw(){
   c.width=v.width;c.height=v.height;c.style.width=vcss.width+'px';c.style.height=vcss.height+'px';
   rt=p.render({canvasContext:c.getContext('2d'),viewport:v});try{await rt.promise}catch(e){return}
   if(my!==drawId)return;
-  cur.pos=pg;cur.pct=pg/pdf.numPages;cur.pu=Date.now();putM(cur);upd()}
+  cur.pos=pg;cur.pct=pg/pdf.numPages;cur.pu=Date.now();autoFin();putM(cur);upd()}
 function upd(){
   if(!cur)return;
   if(cur.type==='pdf'){$('#br').textContent=pg+' / '+pdf.numPages;$('#sc').value=pg}
@@ -442,7 +490,7 @@ function key(e){
   else if(k==='Escape'){anyPop()?closeAll():back()}else if(k==='t')cycle();else if(k==='m')rd.classList.toggle('ch');else if(k==='z')toggleFS();
   else if(k==='Home'||k==='g')jump(-1);else if(k==='End'||k==='G')jump(1);
   else if(k==='c')$('#tb').click();else if(k==='a')$('#ab').click();else if(k==='b')toggleStat();else if(k==='?')toggleHelp();
-  else if(k==='/')focusSearch();else if(k==='d'){rd.classList.add('ch');$('#lk').focus();$('#lk').select()}else if(k==='n'&&SR.items.length)gotoRes(SR.i+1,false);else if(k==='N'&&SR.items.length)gotoRes(SR.i-1,false);else if(k==='H')addHL();else if(k==='v')openHL();else if(k==='p')toggleAnon(cur.id);else if(k==='P')toggleAnon(cur.id,true)
+  else if(k==='/')focusSearch();else if(k==='d')openQ('lk');else if(k==='n'&&SR.items.length)gotoRes(SR.i+1,false);else if(k==='N'&&SR.items.length)gotoRes(SR.i-1,false);else if(k==='H')addHL();else if(k==='v')openHL();else if(k==='p')toggleAnon(cur.id);else if(k==='P')toggleAnon(cur.id,true);else if(k==='e')toggleDone(cur.id)
   else if(k>='1'&&k<='3')setTheme(['light','warm','night'][k-1]);else if(typo(k)){}
   else if(k==='+'||k==='=')cur.type==='pdf'||setSize(1);else if(k==='-')cur.type==='pdf'||setSize(-1);
   else h=false;
@@ -486,7 +534,7 @@ async function syncAll(manual){
         if(!m.ghSynced){
           const d=await tx('d','readonly',s=>s.get(m.id));ghStat('uploading '+dn(m)+'…');
           const ex=await ghGet(file);await ghPut(file,ab2b64(d.buf),ex&&ex.sha,'add '+dn(m));m.ghSynced=true}
-        const r=R[m.id],mine={title:m.title,author:m.author,type:m.type,file,pct:m.pct||0,pos:m.pos,u:Date.now(),anon:m.anon,alias:m.alias,au:m.au};
+        const r=R[m.id],mine={title:m.title,author:m.author,type:m.type,file,pct:m.pct||0,pos:m.pos,u:Date.now(),anon:m.anon,alias:m.alias,au:m.au,done:m.done,du:m.du};
         const lc=(m.pu||0)>(m.gs||0),rc=r&&(r.u||0)>(m.ghU||0);
         let keep=false;
         if(!r)keep=true;
@@ -500,12 +548,14 @@ async function syncAll(manual){
         if(keep){N[m.id]=mine;post.push([m,mine.u])}else await putM(m)}
       for(const m of list){const r=R[m.id];
         if(r&&(r.au||0)>(m.au||0)){m.anon=r.anon;m.alias=r.alias;m.au=r.au;N[m.id]={...N[m.id],anon:r.anon,alias:r.alias,au:r.au};await putM(m)}
-        else if((m.au||0)>((r&&r.au)||0))N[m.id]={...N[m.id],anon:m.anon,alias:m.alias,au:m.au}}
+        else if((m.au||0)>((r&&r.au)||0))N[m.id]={...N[m.id],anon:m.anon,alias:m.alias,au:m.au};
+        if(r&&(r.du||0)>(m.du||0)){m.done=r.done;m.du=r.du;N[m.id]={...N[m.id],done:r.done,du:r.du};await putM(m)}
+        else if((m.du||0)>((r&&r.du)||0))N[m.id]={...N[m.id],done:m.done,du:m.du}}
       for(const id in R){ // books that only exist remotely
         if(have[id])continue;const r=R[id];ghStat('downloading '+(r.anon?(r.alias||'a book'):r.title)+'…');
         const buf=await ghRaw(r.file);
         await tx('d','readwrite',s=>s.put({id,buf}));
-        await putM({id,type:r.type,title:r.title,author:r.author,added:Date.now(),pct:r.pct,pos:r.pos,ghSynced:true,ghU:r.u,gs:Date.now(),anon:r.anon,alias:r.alias,au:r.au})}
+        await putM({id,type:r.type,title:r.title,author:r.author,added:Date.now(),pct:r.pct,pos:r.pos,ghSynced:true,ghU:r.u,gs:Date.now(),anon:r.anon,alias:r.alias,au:r.au,done:r.done,du:r.du})}
       if(JSON.stringify(N)!==JSON.stringify(R)){
         try{await ghPut('progress.json',btoa(unescape(encodeURIComponent(JSON.stringify(N,null,2)))),f&&f.sha,'sync progress')}
         catch(err){if(/409|422/.test(err.message)&&attempt===0)continue;throw err}}
@@ -546,7 +596,7 @@ document.addEventListener('keydown',e=>{
   const go=d=>{li=none?0:Math.max(0,Math.min(cs.length-1,li+d));cs.forEach((c,i)=>c.classList.toggle('sel',i===li));cs[li]&&cs[li].scrollIntoView({block:'nearest'})};
   if(k==='l'||k==='ArrowRight')go(1);else if(k==='h'||k==='ArrowLeft')go(-1);
   else if(k==='j'||k==='ArrowDown')go(cols);else if(k==='k'||k==='ArrowUp')go(-cols);
-  else if(k==='Enter'&&!none)cs[li].click();else if(k==='x'&&!none)cs[li].querySelector('.x').click();else if(k==='p'&&!none)toggleAnon(cs[li].dataset.id);else if(k==='P'&&!none)toggleAnon(cs[li].dataset.id,true);
+  else if(k==='Enter'&&!none)cs[li].click();else if(k==='x'&&!none)cs[li].querySelector('.x').click();else if(k==='p'&&!none)toggleAnon(cs[li].dataset.id);else if(k==='P'&&!none)toggleAnon(cs[li].dataset.id,true);else if(k==='e'&&!none)toggleDone(cs[li].dataset.id);else if(k==='f')cycleFilter();else if(k==='o')cycleSort();
   else if(k==='a')$('#file').click();else if(k==='s')$('#ghbtn').click();else if(k==='?')toggleHelp();
   else if(k==='t')cycle();else if(k>='1'&&k<='3')setTheme(['light','warm','night'][k-1]);else if(k==='Escape')closeAll();else h=false;
   if(h)e.preventDefault()});
@@ -603,7 +653,13 @@ const _setTheme=setTheme;setTheme=function(t){_setTheme(t);renderHL()};
 /* search in book: epub via epub.js section.find, pdf via per-page text (cached), no text layer needed */
 let SR={q:'',items:[],i:-1},srTok=0,pdfTxt={};
 const sq=$('#sq');
-function focusSearch(){rd.classList.add('ch');sq.focus();sq.select()}
+function openQ(id){rd.classList.add('ch');const t=$('#top');t.classList.toggle('qa',id==='sq');t.classList.toggle('qb',id==='lk');const e=$('#'+id);setTimeout(()=>{e.focus();e.select()},0)}
+function focusSearch(){openQ('sq')}
+if(matchMedia('(max-width:760px)').matches){sq.placeholder='search book';$('#lk').placeholder='define a word'}
+[sq,$('#lk')].forEach(i=>i.addEventListener('blur',()=>setTimeout(()=>$('#top').classList.remove('qa','qb'),150)));
+$('#mb').onclick=()=>{const m=$('#more'),was=m.classList.contains('o');closeAll();m.classList.toggle('o',!was)};
+$('#more').onclick=e=>{const a=e.target.dataset&&e.target.dataset.a;if(!a)return;$('#more').classList.remove('o');
+  if(a==='sq'||a==='lk')openQ(a);else if(a==='hl')openHL();else if(a==='an')toggleAnon(cur.id);else if(a==='dn')toggleDone(cur.id);else $('#'+a).click()};
 async function doSearch(q){
   const my=++srTok,out=[],pop=$('#sr');closeAll();
   pop.innerHTML='<div class="field">searching…</div>';pop.classList.add('o');
