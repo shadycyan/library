@@ -103,6 +103,10 @@ button:active{transform:none}
 .sl::-webkit-slider-thumb{border-radius:0;width:10px;height:16px;margin-top:-6px;box-shadow:none}.sl::-moz-range-thumb{border-radius:0}
 #top,#bot{background:var(--bg)}
 #lk{font:13px var(--mono);background:var(--bg);color:var(--fg);border:1px solid var(--bd);padding:4px 8px;width:170px;outline:none}#lk:focus{border-color:var(--fg)}
+#sq{font:13px var(--mono);background:var(--bg);color:var(--fg);border:1px solid var(--bd);padding:4px 8px;width:170px;outline:none}#sq:focus{border-color:var(--fg)}
+#sr a{padding:6px 8px;cursor:pointer;font-size:12px;display:block;border-bottom:1px solid var(--bd)}#sr a span{color:var(--mut)}#sr a:hover,#sr a.cur{background:var(--fg);color:var(--bg)}#sr a:hover span,#sr a.cur span{color:inherit}
+#hl a{padding:6px 8px;cursor:pointer;font-size:12px;display:block;border-bottom:1px solid var(--bd)}#hl a span{color:var(--mut)}#hl a:hover,#hl a.cur{background:var(--fg);color:var(--bg)}#hl a:hover span,#hl a.cur span{color:inherit}
+#hl a button{border:0;padding:0 4px;float:right}
 .pop{border:1px solid var(--fg)}
 #help pre{margin:0;font:12px/1.5 var(--mono);white-space:pre;overflow:auto}
 .card.sel .cv{outline:2px solid var(--fg);outline-offset:3px}.card.sel b{text-decoration:underline}
@@ -121,7 +125,7 @@ button:active{transform:none}
     <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);margin-top:4px;display:block">need a token? create one &rarr;</a>
     <button id="gh-save" style="margin-top:6px">save</button>
     <hr>
-    <div class="row"><button id="gh-push">push ↑</button><button id="gh-pull">pull ↓</button></div>
+    <button id="gh-sync" style="width:100%">sync now</button><button class="tgl" id="gh-auto" style="margin-top:6px"><span>auto-sync</span><i></i></button>
     <div id="gh-stat" class="field" style="text-align:center"></div>
   </div>
   <div id="grid"></div>
@@ -129,8 +133,10 @@ button:active{transform:none}
   <div id="empty" hidden>no books yet. drop an epub or pdf anywhere, or press [a].</div>
 </div>
 <div id="rd">
-  <div id="top"><button id="bk">[esc] library</button><span id="tt"></span><input id="lk" placeholder="[/] lookup word" autocomplete="off" spellcheck="false"><button id="tb">[c] contents</button><button id="sb">[b] status bar</button><button id="zb">[z] fullscreen</button><button id="ab">[a] appearance</button><button id="hb">[?] help</button></div>
+  <div id="top"><button id="bk">[esc] library</button><span id="tt"></span><input id="sq" placeholder="[/] search book" autocomplete="off" spellcheck="false"><input id="lk" placeholder="[d] define word" autocomplete="off" spellcheck="false"><button id="tb">[c] contents</button><button id="sb">[b] status bar</button><button id="zb">[z] fullscreen</button><button id="ab">[a] appearance</button><button id="hb">[?] help</button></div>
   <div class="pop" id="toc"></div>
+  <div class="pop" id="hl" style="left:12px;right:auto;width:520px;max-width:92vw;gap:0"></div>
+  <div class="pop" id="sr" style="left:12px;right:auto;width:520px;max-width:92vw;gap:0"></div>
   <div class="pop" id="pan">
     <div class="row"><button class="t-light" data-t="light">[1] light</button><button class="t-warm" data-t="warm">[2] warm</button><button class="t-night" data-t="night">[3] night</button></div>
     <div class="fr">
@@ -169,7 +175,9 @@ button:active{transform:none}
   j l space down right pgdn   next page
   k h shift+space up left pgup prev page
   g home    G end      start / end
-  /         lookup a word (also: select a word in an epub)
+  /         search in book    n / N   next / prev match
+  d         define a word (also: select a word in an epub)
+  H         highlight selection (epub)   v   list highlights
   c         contents          a   appearance panel
   m         top bar           b   status bar (oled: off)
   z         fullscreen        t   cycle theme
@@ -262,7 +270,7 @@ async function lookup(word){
 function closeDef(){$('#def').classList.remove('o')}
 async function onSelect(cfiRange,contents){
   const sel=contents.window.getSelection(),text=(sel&&sel.toString()||'').trim();
-  if(!text||/\s/.test(text)){closeDef();return}
+  LASTSEL=text?{cfi:cfiRange,text}:null;if(!text||/\s/.test(text)){closeDef();return}
   const rec=await lookup(text);
   const rects=sel.getRangeAt(0).getClientRects();if(!rects.length)return;
   const fr=contents.window.frameElement,fb=fr.getBoundingClientRect(),rb=rects[0];
@@ -322,7 +330,7 @@ async function openBook(id){
   }catch(e){toast('could not open this book');back()}}
 async function back(){
   try{rend&&rend.destroy();book&&book.destroy();pdf&&pdf.destroy()}catch(e){}
-  rend=book=pdf=null;$('#viewer').innerHTML='';$('#viewer').style.maxWidth='';$('#stage').style.padding='';rd.style.display='none';$('#lib').style.display='';closePops();lib()}
+  rend=book=pdf=null;$('#viewer').innerHTML='';$('#viewer').style.maxWidth='';$('#stage').style.padding='';pdfTxt={};SR={q:'',items:[],i:-1};hlShown={};LASTSEL=null;autoSync();rd.style.display='none';$('#lib').style.display='';closePops();lib()}
 async function openEpub(buf){
   book=ePub(buf);
   fitView();rend=book.renderTo('viewer',{width:'100%',height:'100%',flow:S.scroll?'scrolled-doc':'paginated',spread:'none'});
@@ -331,12 +339,12 @@ async function openEpub(buf){
     st.textContent='html,body{background:var(--bg)!important;color:var(--fg)!important;line-height:var(--lh)!important}body *{color:inherit!important;background-color:transparent!important}body,body *:not(pre):not(code){font-family:var(--ff)!important;font-weight:var(--fw)!important;letter-spacing:var(--ls)!important;word-spacing:var(--ws)!important;text-align:var(--jt)!important}p,li{margin-bottom:var(--ps)!important}a,a *{color:var(--ln)!important;font-weight:var(--fw)!important}img,svg{max-width:100%!important}';
     c.document.head.appendChild(st);applyC(c)});
   applyAll();syncPanel();
-  rend.on('relocated',l=>{cur.pct=book.locations.length()?book.locations.percentageFromCfi(l.start.cfi):cur.pct;cur.pos=l.start.cfi;putM(cur);upd()});
+  rend.on('relocated',l=>{cur.pct=book.locations.length()?book.locations.percentageFromCfi(l.start.cfi):cur.pct;cur.pos=l.start.cfi;cur.pu=Date.now();putM(cur);upd()});
   rend.on('click',e=>{if(e.target.closest&&e.target.closest('a'))return;const w=e.view||window;if((w.getSelection()+'').trim())return;closeDef();zone(e.clientX,w.innerWidth)});
   rend.on('selected',onSelect);
   rend.on('relocated',()=>closeDef());
   rend.on('keydown',key);
-  await rend.display(cur.pos||undefined);
+  await rend.display(cur.pos||undefined);renderHL();
   book.loaded.navigation.then(n=>{const t=$('#toc');const add=(items,l)=>items.forEach(i=>{const a=document.createElement('a');a.textContent=i.label.trim();a.style.paddingLeft=(8+l*14)+'px';a.onclick=()=>{rend.display(i.href);closePops()};t.appendChild(a);if(i.subitems)add(i.subitems,l+1)});add(n.toc,0)});
   book.ready.then(()=>book.locations.generate(1200)).then(()=>{$('#sc').disabled=false;upd()}).catch(()=>{})}
 async function openPdf(buf){pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;pg=Math.min(cur.pos||1,pdf.numPages);$('#sc').min=1;$('#sc').max=pdf.numPages;$('#sc').disabled=false;draw()}
@@ -350,7 +358,7 @@ async function draw(){
   c.width=v.width;c.height=v.height;c.style.width=vcss.width+'px';c.style.height=vcss.height+'px';
   rt=p.render({canvasContext:c.getContext('2d'),viewport:v});try{await rt.promise}catch(e){return}
   if(my!==drawId)return;
-  cur.pos=pg;cur.pct=pg/pdf.numPages;putM(cur);upd()}
+  cur.pos=pg;cur.pct=pg/pdf.numPages;cur.pu=Date.now();putM(cur);upd()}
 function upd(){
   if(!cur)return;
   if(cur.type==='pdf'){$('#br').textContent=pg+' / '+pdf.numPages;$('#sc').value=pg}
@@ -385,7 +393,7 @@ function key(e){
   else if(k==='Escape'){anyPop()?closeAll():back()}else if(k==='t')cycle();else if(k==='m')rd.classList.toggle('ch');else if(k==='z')toggleFS();
   else if(k==='Home'||k==='g')jump(-1);else if(k==='End'||k==='G')jump(1);
   else if(k==='c')$('#tb').click();else if(k==='a')$('#ab').click();else if(k==='b')toggleStat();else if(k==='?')toggleHelp();
-  else if(k==='/'){rd.classList.add('ch');$('#lk').focus();$('#lk').select()}
+  else if(k==='/')focusSearch();else if(k==='d'){rd.classList.add('ch');$('#lk').focus();$('#lk').select()}else if(k==='n'&&SR.items.length)gotoRes(SR.i+1,false);else if(k==='N'&&SR.items.length)gotoRes(SR.i-1,false);else if(k==='H')addHL();else if(k==='v')openHL()
   else if(k>='1'&&k<='3')setTheme(['light','warm','night'][k-1]);else if(typo(k)){}
   else if(k==='+'||k==='=')cur.type==='pdf'||setSize(1);else if(k==='-')cur.type==='pdf'||setSize(-1);
   else h=false;
@@ -405,45 +413,59 @@ async function ghPut(path,b64,sha,msg){
   if(!r.ok)throw new Error('gh put '+r.status+' '+path);return r.json()}
 function ab2b64(buf){const b=new Uint8Array(buf);let s='';const chunk=0x8000;for(let i=0;i<b.length;i+=chunk)s+=String.fromCharCode(...b.subarray(i,i+chunk));return btoa(s)}
 function b642ab(b64){const s=atob(b64.replace(/\n/g,''));const b=new Uint8Array(s.length);for(let i=0;i<s.length;i++)b[i]=s.charCodeAt(i);return b.buffer}
-$('#ghbtn').onclick=()=>{closePops();$('#ghpan').classList.toggle('o');if(GH.repo)$('#gh-repo').value=GH.repo;if(GH.tok)$('#gh-tok').value=GH.tok};
+$('#ghbtn').onclick=()=>{closePops();$('#ghpan').classList.toggle('o');syncUI();if(GH.repo)$('#gh-repo').value=GH.repo;if(GH.tok)$('#gh-tok').value=GH.tok};
 $('#gh-save').onclick=()=>{GH.repo=$('#gh-repo').value.trim();GH.tok=$('#gh-tok').value.trim();ghSave();ghStat(GH.repo&&GH.tok?'saved':'enter repo and token')};
-$('#gh-push').onclick=async()=>{
-  if(!GH.repo||!GH.tok){ghStat('connect a repo first');return}
-  ghStat('pushing…');
+/* sync: one merge pass (upload new books, download missing ones, reconcile progress). conflict = both sides moved since last sync */
+async function ghRaw(path){const r=await ghApi(path,{headers:{Accept:'application/vnd.github.raw+json'}});if(!r.ok)throw new Error('gh '+r.status+' '+path);return r.arrayBuffer()}
+let syncing=false,syncT;
+const autoOn=()=>GH.auto!==false,syncUI=()=>$('#gh-auto').classList.toggle('on',autoOn());
+const autoSync=()=>{if(autoOn()&&GH.repo&&GH.tok&&navigator.onLine){clearTimeout(syncT);syncT=setTimeout(()=>syncAll(false),1500)}};
+const fmtT=t=>t?new Date(t).toLocaleString():'unknown';
+async function syncAll(manual){
+  if(!GH.repo||!GH.tok){if(manual)ghStat('connect a repo first');return}
+  if(syncing)return;syncing=true;ghStat('syncing…');
   try{
-    let prog={};try{const f=await ghGet('progress.json');if(f)prog=JSON.parse(atob(f.content.replace(/\n/g,'')))}catch(e){}
-    const ms=await tx('m','readonly',s=>s.getAll());
-    for(const m of ms){
-      const ext=m.type==='pdf'?'pdf':'epub',path='books/'+m.id+'.'+ext;
-      if(!m.ghSynced){
-        const d=await tx('d','readonly',s=>s.get(m.id));
-        ghStat('uploading '+m.title+'…');
-        let sha;try{const ex=await ghGet(path);sha=ex&&ex.sha}catch(e){}
-        await ghPut(path,ab2b64(d.buf),sha,'add '+m.title);
-        m.ghSynced=true;await putM(m)}
-      prog[m.id]={title:m.title,author:m.author,type:m.type,file:'books/'+m.id+'.'+(m.type==='pdf'?'pdf':'epub'),pct:m.pct||0,pos:m.pos,u:Date.now()}}
-    let psha;try{const ex=await ghGet('progress.json');psha=ex&&ex.sha}catch(e){}
-    await ghPut('progress.json',btoa(unescape(encodeURIComponent(JSON.stringify(prog,null,2)))),psha,'sync progress');
-    ghStat('pushed '+new Date().toLocaleTimeString())
-  }catch(e){ghStat(/404/.test(e.message)?'push failed: github says not found. for a private repo this almost always means the token cannot see it: check it is scoped to this repo with Contents set to read and write':'push failed: '+e.message)}};
-$('#gh-pull').onclick=async()=>{
-  if(!GH.repo||!GH.tok){ghStat('connect a repo first');return}
-  ghStat('pulling…');
-  try{
-    const f=await ghGet('progress.json');if(!f){ghStat('no progress.json on remote yet');return}
-    const prog=JSON.parse(decodeURIComponent(escape(atob(f.content.replace(/\n/g,'')))));
-    const ms=await tx('m','readonly',s=>s.getAll());const byId={};ms.forEach(m=>byId[m.id]=m);
-    for(const id in prog){
-      const r=prog[id];let m=byId[id];
-      if(!m){
-        ghStat('downloading '+r.title+'…');
-        const bf=await ghGet(r.file);if(!bf)continue;
-        m={id,type:r.type,title:r.title,author:r.author,added:Date.now(),pct:r.pct,pos:r.pos,ghSynced:true};
-        await tx('d','readwrite',s=>s.put({id,buf:b642ab(bf.content)}));await putM(m)
-      }else if((r.u||0)>(m.ghU||0)&&r.pct!==undefined){
-        m.pct=r.pct;m.pos=r.pos;m.ghU=r.u;await putM(m)}}
-    ghStat('pulled '+new Date().toLocaleTimeString());lib()
-  }catch(e){ghStat(/404/.test(e.message)?'pull failed: repo not found or no access':'pull failed: '+e.message)}};
+    for(let attempt=0;attempt<2;attempt++){
+      const f=await ghGet('progress.json');
+      const R=f?JSON.parse(decodeURIComponent(escape(atob(f.content.replace(/\n/g,''))))):{};
+      const N=JSON.parse(JSON.stringify(R)),have={},post=[];
+      const ms=await tx('m','readonly',s=>s.getAll());
+      for(let m of ms){
+        if(cur&&m.id===cur.id&&rd.style.display==='flex')m=cur; // live object, so we never clobber progress being written right now
+        have[m.id]=1;
+        const file='books/'+m.id+'.'+(m.type==='pdf'?'pdf':'epub');
+        if(!m.ghSynced){
+          const d=await tx('d','readonly',s=>s.get(m.id));ghStat('uploading '+m.title+'…');
+          const ex=await ghGet(file);await ghPut(file,ab2b64(d.buf),ex&&ex.sha,'add '+m.title);m.ghSynced=true}
+        const r=R[m.id],mine={title:m.title,author:m.author,type:m.type,file,pct:m.pct||0,pos:m.pos,u:Date.now()};
+        const lc=(m.pu||0)>(m.gs||0),rc=r&&(r.u||0)>(m.ghU||0);
+        let keep=false;
+        if(!r)keep=true;
+        else if(r.pos===m.pos){if(rc||lc){m.ghU=r.u;m.gs=Date.now()}}
+        else if(rc&&lc){
+          if(document.hidden){await putM(m);continue}
+          const useRemote=confirm('"'+m.title+'" has progress on two devices.\n\nthis device: '+Math.round((m.pct||0)*100)+'%  ('+fmtT(m.pu)+')\nremote:      '+Math.round((r.pct||0)*100)+'%  ('+fmtT(r.u)+')\n\nOK = use remote position\nCancel = keep this device');
+          if(useRemote){m.pct=r.pct;m.pos=r.pos;m.ghU=r.u;m.gs=Date.now()}else keep=true}
+        else if(rc){m.pct=r.pct;m.pos=r.pos;m.ghU=r.u;m.gs=Date.now()}
+        else if(lc)keep=true;
+        if(keep){N[m.id]=mine;post.push([m,mine.u])}else await putM(m)}
+      for(const id in R){ // books that only exist remotely
+        if(have[id])continue;const r=R[id];ghStat('downloading '+r.title+'…');
+        const buf=await ghRaw(r.file);
+        await tx('d','readwrite',s=>s.put({id,buf}));
+        await putM({id,type:r.type,title:r.title,author:r.author,added:Date.now(),pct:r.pct,pos:r.pos,ghSynced:true,ghU:r.u,gs:Date.now()})}
+      if(JSON.stringify(N)!==JSON.stringify(R)){
+        try{await ghPut('progress.json',btoa(unescape(encodeURIComponent(JSON.stringify(N,null,2)))),f&&f.sha,'sync progress')}
+        catch(err){if(/409|422/.test(err.message)&&attempt===0)continue;throw err}}
+      for(const[m,u]of post){m.ghU=u;m.gs=Date.now();await putM(m)}
+      break}
+    await syncHL();lib();ghStat('synced '+new Date().toLocaleTimeString())
+  }catch(e){ghStat(/404/.test(e.message)?'sync failed: github says not found. for a private repo this almost always means the token cannot see it: check it is scoped to this repo with Contents set to read and write':'sync failed: '+e.message)}
+  finally{syncing=false}}
+$('#gh-sync').onclick=()=>syncAll(true);
+$('#gh-auto').onclick=()=>{GH.auto=!autoOn();ghSave();syncUI();if(autoOn())autoSync()};
+document.addEventListener('visibilitychange',autoSync);addEventListener('online',autoSync);setInterval(autoSync,300000);
+
 
 /* tui layer: status bar toggle, lookup field, help, library + appearance keys */
 S.status=S.status!==false;rd.classList.toggle('nostat',!S.status);
@@ -477,7 +499,95 @@ document.addEventListener('keydown',e=>{
   else if(k==='t')cycle();else if(k>='1'&&k<='3')setTheme(['light','warm','night'][k-1]);else if(k==='Escape')closeAll();else h=false;
   if(h)e.preventDefault()});
 
+/* highlights (epub): stored per book as {id:{cfi,text,t,u,del}}; merged per highlight by newest u, deletes are tombstones, so no conflict prompt is ever needed */
+let LASTSEL=null,hlShown={};
+const HLS={light:{fill:'#ffd400','fill-opacity':'.4','mix-blend-mode':'multiply'},warm:{fill:'#e0a800','fill-opacity':'.35','mix-blend-mode':'multiply'},night:{fill:'#ffd400','fill-opacity':'.35','mix-blend-mode':'normal'}};
+function renderHL(){
+  if(!rend||!cur||cur.type!=='epub')return;
+  for(const c in hlShown){try{rend.annotations.remove(c,'highlight')}catch(e){}}
+  hlShown={};
+  const L=cur.hl||{};
+  for(const id in L){const x=L[id];if(x.del)continue;try{rend.annotations.highlight(x.cfi,{id},()=>openHL(id),'hl',HLS[S.theme]);hlShown[x.cfi]=id}catch(e){}}}
+function addHL(){
+  if(!cur||cur.type!=='epub'){toast('highlights are epub only for now');return}
+  if(!LASTSEL||!LASTSEL.cfi){toast('select some text first, then press H');return}
+  const L=cur.hl=cur.hl||{};
+  for(const id in L)if(L[id].cfi===LASTSEL.cfi&&!L[id].del){toast('already highlighted');return}
+  const now=Date.now();
+  L[crypto.randomUUID()]={cfi:LASTSEL.cfi,text:LASTSEL.text.slice(0,400),t:now,u:now};
+  putM(cur);rend.getContents().forEach(c=>c.window.getSelection().removeAllRanges());LASTSEL=null;closeDef();
+  renderHL();toast('highlighted');autoSync()}
+function openHL(fid){
+  if(!cur||cur.type!=='epub'){toast('highlights are epub only for now');return}
+  const p=$('#hl'),L=cur.hl||{},items=Object.entries(L).filter(([,x])=>!x.del).sort((a,b)=>a[1].t-b[1].t);
+  closeAll();
+  p.innerHTML='<div class="field"><b>'+items.length+' highlights</b> &middot; click to jump &middot; [x] delete &middot; esc close</div>'+(items.map(([id,x])=>'<a data-id="'+id+'"'+(id===fid?' class="cur"':'')+'><span>'+esc(new Date(x.t).toLocaleDateString())+'</span> '+esc(x.text.length>140?x.text.slice(0,140)+'…':x.text)+' <button data-del="'+id+'">[x]</button></a>').join('')||'<div class="field">none yet. select text, then press H</div>');
+  p.classList.add('o');
+  p.querySelectorAll('a').forEach(a=>a.onclick=e=>{if(e.target.dataset.del)return;p.classList.remove('o');rend.display(L[a.dataset.id].cfi)});
+  p.querySelectorAll('button[data-del]').forEach(b=>b.onclick=e=>{e.stopPropagation();delHL(b.dataset.del)})}
+function delHL(id){const x=cur.hl[id];cur.hl[id]={cfi:x.cfi,t:x.t,del:true,u:Date.now()};putM(cur);renderHL();openHL();autoSync()}
+async function syncHL(){
+  for(let a=0;a<2;a++){
+    const f=await ghGet('highlights.json');
+    const R=f?JSON.parse(decodeURIComponent(escape(atob(f.content.replace(/\n/g,''))))):{};
+    const N=JSON.parse(JSON.stringify(R));let changed=false;
+    const ms=await tx('m','readonly',s=>s.getAll());
+    for(let m of ms){
+      if(cur&&m.id===cur.id&&rd.style.display==='flex')m=cur;
+      const L=m.hl||{},B=N[m.id]=N[m.id]||{};let dirty=false;
+      for(const id in B)if(!L[id]||(B[id].u||0)>(L[id].u||0)){L[id]=B[id];dirty=true}
+      for(const id in L)if(!B[id]||(L[id].u||0)>(B[id].u||0)){B[id]=L[id];changed=true}
+      if(!Object.keys(B).length)delete N[m.id];
+      if(dirty){m.hl=L;await putM(m);if(m===cur)renderHL()}}
+    if(changed){
+      try{await ghPut('highlights.json',btoa(unescape(encodeURIComponent(JSON.stringify(N,null,2)))),f&&f.sha,'sync highlights')}
+      catch(err){if(/409|422/.test(err.message)&&a===0)continue;throw err}}
+    break}}
+// re-colour highlights when the theme changes
+const _setTheme=setTheme;setTheme=function(t){_setTheme(t);renderHL()};
+
+/* search in book: epub via epub.js section.find, pdf via per-page text (cached), no text layer needed */
+let SR={q:'',items:[],i:-1},srTok=0,pdfTxt={};
+const sq=$('#sq');
+function focusSearch(){rd.classList.add('ch');sq.focus();sq.select()}
+async function doSearch(q){
+  const my=++srTok,out=[],pop=$('#sr');closeAll();
+  pop.innerHTML='<div class="field">searching…</div>';pop.classList.add('o');
+  try{
+    if(cur.type==='pdf'){
+      const n=pdf.numPages,ql=q.toLowerCase();
+      for(let p=1;p<=n&&out.length<300;p++){
+        if(my!==srTok)return;
+        if(!pdfTxt[p]){const pg0=await pdf.getPage(p),tc=await pg0.getTextContent();pdfTxt[p]=tc.items.map(i=>i.str).join(' ').replace(/\s+/g,' ')}
+        const t=pdfTxt[p],tl=t.toLowerCase();let i=-1;
+        while((i=tl.indexOf(ql,i+1))>=0&&out.length<300)out.push({loc:p,label:'p.'+p,ex:t.slice(Math.max(0,i-40),i+q.length+40)});
+        if(p%10===0)pop.firstChild.textContent='searching… page '+p+'/'+n}
+    }else{
+      const items=book.spine.spineItems;
+      for(let s=0;s<items.length&&out.length<300;s++){
+        if(my!==srTok)return;
+        const it=items[s];
+        try{await it.load(book.load.bind(book));for(const r of it.find(q))out.push({loc:r.cfi,label:'ch.'+(s+1),ex:r.excerpt.trim()})}catch(e){}finally{it.unload()}
+        pop.firstChild.textContent='searching… '+(s+1)+'/'+items.length}}
+  }catch(e){}
+  if(my!==srTok)return;
+  SR={q,items:out,i:-1};renderSR();if(out.length)gotoRes(0,false)}
+function renderSR(){
+  const p=$('#sr');
+  if(!SR.items.length){p.innerHTML='<div class="field">no matches for "'+esc(SR.q)+'"</div>';return}
+  p.innerHTML='<div class="field"><b>'+SR.items.length+(SR.items.length>=300?'+':'')+' matches</b> &middot; n / N next, prev &middot; esc close</div>'+SR.items.map((r,i)=>'<a data-i="'+i+'"><span>'+esc(r.label)+'</span> '+esc(r.ex)+'</a>').join('');
+  p.querySelectorAll('a').forEach(a=>a.onclick=()=>gotoRes(+a.dataset.i,true))}
+function gotoRes(i,close){
+  if(!SR.items.length)return;SR.i=(i+SR.items.length)%SR.items.length;const r=SR.items[SR.i];
+  if(cur.type==='pdf'){pg=r.loc;draw()}else rend.display(r.loc);
+  document.querySelectorAll('#sr a').forEach((a,j)=>a.classList.toggle('cur',j===SR.i));
+  if(close)$('#sr').classList.remove('o')}
+sq.onkeydown=e=>{
+  if(e.key==='Escape'){sq.blur();$('#sr').classList.remove('o');srTok++;return}
+  if(e.key==='Enter'){const q=sq.value.trim();if(q.length<2)return;sq.blur();doSearch(q)}};
+
 setTheme(S.theme);syncPanel();
+syncUI();autoSync();
 lib().catch(()=>{toast('storage unavailable, books cannot be saved here');$('#empty').hidden=false});
 
 /* self-host only: no-ops harmlessly inside a sandboxed artifact preview */
