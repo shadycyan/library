@@ -1,7 +1,10 @@
-// app-shell cache only — book files live in IndexedDB, untouched here.
-// bump CACHE on every deploy so clients pick up the new reader.html.
-const CACHE = 'reader-shell-v1';
-const SHELL = ['./reader.html', './manifest.json', './icon.svg'];
+// app-shell cache so the app opens instantly and offline. books live in IndexedDB, untouched here.
+// shell files come from cache and refresh in the background (stale-while-revalidate), so a new deploy
+// shows up on the second load with no version bump needed.
+const CACHE = 'reader-shell-v4';
+const SHELL = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png'].map(s => new URL(s, self.location).href);
+// only these hosts are cached at runtime (pinned library versions + fonts). github api responses are never cached.
+const CDN = ['cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)));
@@ -9,26 +12,29 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-  );
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))));
   self.clients.claim();
 });
 
-// shell files: cache-first so the app opens instantly offline.
-// everything else (cdn libs, fonts, github api): network, falling back to cache if offline.
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  const isShell = SHELL.some(s => e.request.url.endsWith(s.replace('./', '')));
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  const isShell = SHELL.includes(url.origin + url.pathname) || req.mode === 'navigate';
   if (isShell) {
-    e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
-  } else {
-    e.respondWith(
-      fetch(e.request).then(res => {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
-        return res;
-      }).catch(() => caches.match(e.request))
-    );
+    e.respondWith(caches.open(CACHE).then(async c => {
+      const hit = (await c.match(req, { ignoreSearch: true })) || (req.mode === 'navigate' ? await c.match(SHELL[1]) : null);
+      const net = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => hit);
+      return hit || net;
+    }));
+  } else if (CDN.includes(url.hostname)) {
+    e.respondWith(caches.open(CACHE).then(async c => {
+      const hit = await c.match(req);
+      if (hit) return hit;
+      const r = await fetch(req);
+      if (r.ok || r.type === 'opaque') c.put(req, r.clone());
+      return r;
+    }));
   }
+  // everything else (github api, etc.) goes straight to the network
 });
