@@ -62,6 +62,7 @@ hr{border:0;border-top:1px solid var(--bd);margin:12px 0}
 .bar{height:2px;background:var(--bd);margin-top:5px}.bar i{display:block;height:100%;background:var(--mut)}
 .x{position:absolute;top:4px;right:4px;padding:0 7px;line-height:22px;background:rgba(0,0,0,.55);color:#fff;border:0;border-radius:11px;opacity:0}
 .card:hover .x,.x:focus{opacity:1}@media(hover:none){.x{opacity:.8}}
+.an{position:absolute;top:4px;left:4px;padding:0 6px;line-height:20px;background:rgba(0,0,0,.55);color:#fff;border:0;opacity:0}.card:hover .an,.an:focus{opacity:1}@media(hover:none){.an{opacity:.8}}.card.anon .an{opacity:1;background:var(--fg);color:var(--bg)}
 #empty{color:var(--mut);text-align:center;padding:90px 0}
 #rd{position:fixed;inset:0;display:none;flex-direction:column;background:var(--bg)}
 #top{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;gap:8px;align-items:center;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(20px) saturate(1.6);-webkit-backdrop-filter:blur(20px) saturate(1.6);border-bottom:1px solid var(--bd);transform:translateY(-101%);transition:transform .18s}
@@ -129,7 +130,7 @@ button:active{transform:none}
     <div id="gh-stat" class="field" style="text-align:center"></div>
   </div>
   <div id="grid"></div>
-  <div id="hint">h j k l move &middot; enter open &middot; x remove &middot; a add &middot; s sync &middot; t theme &middot; ? help</div>
+  <div id="hint">h j k l move &middot; enter open &middot; x remove &middot; a add &middot; s sync &middot; p anon &middot; t theme &middot; ? help</div>
   <div id="empty" hidden>no books yet. drop an epub or pdf anywhere, or press [a].</div>
 </div>
 <div id="rd">
@@ -169,6 +170,7 @@ button:active{transform:none}
   j k h l / arrows   move         enter   open
   x                  remove       a       add books
   s                  sync         t       cycle theme
+  p                  anonymous    P       set shown name
   1 2 3              light / warm / night
 
  reading
@@ -178,6 +180,7 @@ button:active{transform:none}
   /         search in book    n / N   next / prev match
   d         define a word (also: select a word in an epub)
   H         highlight selection (epub)   v   list highlights
+  p         anonymous on/off   P   set the shown name
   c         contents          a   appearance panel
   m         top bar           b   status bar (oled: off)
   z         fullscreen        t   cycle theme
@@ -290,13 +293,28 @@ dictStat();
 async function lib(){
   const ms=(await tx('m','readonly',s=>s.getAll())).sort((a,b)=>(b.opened||0)-(a.opened||0)||b.added-a.added);
   const g=$('#grid');g.innerHTML='';$('#empty').hidden=ms.length>0;
-  ms.forEach(m=>{const c=document.createElement('div');c.className='card';
-    const h=[...m.title].reduce((a,ch)=>a+ch.charCodeAt(0),0)%360;
-    c.innerHTML=`<div class="cv" style="background:hsl(${h} 25% 38%)">${m.cover?`<img src="${m.cover}" alt="">`:`<span class="cvt">${esc(m.title)}</span>`}</div><b>${esc(m.title)}</b><small>${esc(m.author||m.type)}</small><div class="bar"><i style="width:${Math.round((m.pct||0)*100)}%"></i></div><button class="x" title="remove">&times;</button>`;
+  ms.forEach(m=>{const c=document.createElement('div');c.className='card'+(m.anon?' anon':'');c.dataset.id=m.id;
+    const h=[...dn(m)].reduce((a,ch)=>a+ch.charCodeAt(0),0)%360;
+    c.innerHTML=`<div class="cv" style="background:hsl(${h} 25% 38%)">${m.cover&&!m.anon?`<img src="${m.cover}" alt="">`:`<span class="cvt">${esc(dn(m))}</span>`}</div><b>${esc(dn(m))}</b><small>${esc(m.anon?m.type:(m.author||m.type))}</small><div class="bar"><i style="width:${Math.round((m.pct||0)*100)}%"></i></div><button class="an" title="anonymous on/off (p)">[p]</button><button class="x" title="remove">&times;</button>`;
     c.onclick=()=>openBook(m.id);
-    c.querySelector('.x').onclick=async e=>{e.stopPropagation();if(confirm('remove "'+m.title+'"?')){await tx('m','readwrite',s=>s.delete(m.id));await tx('d','readwrite',s=>s.delete(m.id));lib()}};
+    c.querySelector('.an').onclick=e=>{e.stopPropagation();toggleAnon(m.id)};c.querySelector('.x').onclick=async e=>{e.stopPropagation();if(confirm('remove "'+dn(m)+'"?')){await tx('m','readwrite',s=>s.delete(m.id));await tx('d','readwrite',s=>s.delete(m.id));lib()}};
     g.appendChild(c)})}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* anonymous books: the shown name + generic cover replace the real ones everywhere on screen. real title is kept for un-hiding */
+const ALIASES=['Q3 Budget Review','Meeting Notes','Tax Documents','Lecture Notes','Meal Prep Ideas','Project Plan v3','Invoice Template','Travel Itinerary','Spreadsheet Tips','Garden Planning','Onboarding Guide','Expense Report','Study Schedule','Shopping List','Insurance Policy','Team Handbook'];
+const randAlias=()=>ALIASES[Math.floor(Math.random()*ALIASES.length)];
+const dn=m=>m.anon?(m.alias||'Document'):m.title;
+function showTitle(){$('#tt').textContent=dn(cur);$('#bl').textContent=dn(cur)}
+async function toggleAnon(id,edit){
+  const live=cur&&id===cur.id&&rd.style.display==='flex',m=live?cur:await getM(id);if(!m)return;
+  if(edit){const a=prompt('name to show for this book (blank = random):',m.alias||'');if(a===null)return;m.anon=true;m.alias=a.trim()||randAlias()}
+  else if(m.anon)m.anon=false;
+  else{m.anon=true;m.alias=m.alias||randAlias()}
+  m.au=Date.now();await putM(m);
+  const sel=document.querySelector('.card.sel'),selId=sel&&sel.dataset.id;
+  if(live)showTitle();
+  await lib();if(selId){const c=document.querySelector('.card[data-id="'+selId+'"]');c&&c.classList.add('sel')}
+  toast(m.anon?'anonymous: '+m.alias:'real name restored');autoSync()}
 /* covers: built locally from the book file (never synced), so any device can make them. used by add-books and by the backfill below */
 const thumb=url=>new Promise(res=>{const i=new Image();i.onload=()=>{const s=Math.min(1,240/i.width),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.75))};i.onerror=()=>res(url);i.src=url});
 async function coverOf(buf,type){
@@ -343,7 +361,7 @@ async function openBook(id){
     cur=await getM(id);const d=await tx('d','readonly',s=>s.get(id));
     cur.opened=Date.now();putM(cur);
     $('#lib').style.display='none';rd.style.display='flex';rd.classList.remove('ch');rd.classList.toggle('pdf',cur.type==='pdf');
-    $('#tt').textContent=cur.title;$('#bl').textContent=cur.title;$('#br').textContent='';$('#sc').disabled=true;
+    showTitle();$('#br').textContent='';$('#sc').disabled=true;
     $('#toc').innerHTML='';$('#tb').style.display=cur.type==='pdf'?'none':'';
     $('#viewer').style.display=cur.type==='pdf'?'none':'block';$('#pw').style.display=cur.type==='pdf'?'flex':'none';
     cur.type==='pdf'?await openPdf(d.buf):await openEpub(d.buf);
@@ -423,7 +441,7 @@ function key(e){
   else if(k==='Escape'){anyPop()?closeAll():back()}else if(k==='t')cycle();else if(k==='m')rd.classList.toggle('ch');else if(k==='z')toggleFS();
   else if(k==='Home'||k==='g')jump(-1);else if(k==='End'||k==='G')jump(1);
   else if(k==='c')$('#tb').click();else if(k==='a')$('#ab').click();else if(k==='b')toggleStat();else if(k==='?')toggleHelp();
-  else if(k==='/')focusSearch();else if(k==='d'){rd.classList.add('ch');$('#lk').focus();$('#lk').select()}else if(k==='n'&&SR.items.length)gotoRes(SR.i+1,false);else if(k==='N'&&SR.items.length)gotoRes(SR.i-1,false);else if(k==='H')addHL();else if(k==='v')openHL()
+  else if(k==='/')focusSearch();else if(k==='d'){rd.classList.add('ch');$('#lk').focus();$('#lk').select()}else if(k==='n'&&SR.items.length)gotoRes(SR.i+1,false);else if(k==='N'&&SR.items.length)gotoRes(SR.i-1,false);else if(k==='H')addHL();else if(k==='v')openHL();else if(k==='p')toggleAnon(cur.id);else if(k==='P')toggleAnon(cur.id,true)
   else if(k>='1'&&k<='3')setTheme(['light','warm','night'][k-1]);else if(typo(k)){}
   else if(k==='+'||k==='=')cur.type==='pdf'||setSize(1);else if(k==='-')cur.type==='pdf'||setSize(-1);
   else h=false;
@@ -458,32 +476,35 @@ async function syncAll(manual){
     for(let attempt=0;attempt<2;attempt++){
       const f=await ghGet('progress.json');
       const R=f?JSON.parse(decodeURIComponent(escape(atob(f.content.replace(/\n/g,''))))):{};
-      const N=JSON.parse(JSON.stringify(R)),have={},post=[];
+      const N=JSON.parse(JSON.stringify(R)),have={},post=[],list=[];
       const ms=await tx('m','readonly',s=>s.getAll());
       for(let m of ms){
         if(cur&&m.id===cur.id&&rd.style.display==='flex')m=cur; // live object, so we never clobber progress being written right now
-        have[m.id]=1;
+        have[m.id]=1;list.push(m);
         const file='books/'+m.id+'.'+(m.type==='pdf'?'pdf':'epub');
         if(!m.ghSynced){
-          const d=await tx('d','readonly',s=>s.get(m.id));ghStat('uploading '+m.title+'…');
-          const ex=await ghGet(file);await ghPut(file,ab2b64(d.buf),ex&&ex.sha,'add '+m.title);m.ghSynced=true}
-        const r=R[m.id],mine={title:m.title,author:m.author,type:m.type,file,pct:m.pct||0,pos:m.pos,u:Date.now()};
+          const d=await tx('d','readonly',s=>s.get(m.id));ghStat('uploading '+dn(m)+'…');
+          const ex=await ghGet(file);await ghPut(file,ab2b64(d.buf),ex&&ex.sha,'add '+dn(m));m.ghSynced=true}
+        const r=R[m.id],mine={title:m.title,author:m.author,type:m.type,file,pct:m.pct||0,pos:m.pos,u:Date.now(),anon:m.anon,alias:m.alias,au:m.au};
         const lc=(m.pu||0)>(m.gs||0),rc=r&&(r.u||0)>(m.ghU||0);
         let keep=false;
         if(!r)keep=true;
         else if(r.pos===m.pos){if(rc||lc){m.ghU=r.u;m.gs=Date.now()}}
         else if(rc&&lc){
           if(document.hidden){await putM(m);continue}
-          const useRemote=confirm('"'+m.title+'" has progress on two devices.\n\nthis device: '+Math.round((m.pct||0)*100)+'%  ('+fmtT(m.pu)+')\nremote:      '+Math.round((r.pct||0)*100)+'%  ('+fmtT(r.u)+')\n\nOK = use remote position\nCancel = keep this device');
+          const useRemote=confirm('"'+dn(m)+'" has progress on two devices.\n\nthis device: '+Math.round((m.pct||0)*100)+'%  ('+fmtT(m.pu)+')\nremote:      '+Math.round((r.pct||0)*100)+'%  ('+fmtT(r.u)+')\n\nOK = use remote position\nCancel = keep this device');
           if(useRemote){m.pct=r.pct;m.pos=r.pos;m.ghU=r.u;m.gs=Date.now()}else keep=true}
         else if(rc){m.pct=r.pct;m.pos=r.pos;m.ghU=r.u;m.gs=Date.now()}
         else if(lc)keep=true;
         if(keep){N[m.id]=mine;post.push([m,mine.u])}else await putM(m)}
+      for(const m of list){const r=R[m.id];
+        if(r&&(r.au||0)>(m.au||0)){m.anon=r.anon;m.alias=r.alias;m.au=r.au;N[m.id]={...N[m.id],anon:r.anon,alias:r.alias,au:r.au};await putM(m)}
+        else if((m.au||0)>((r&&r.au)||0))N[m.id]={...N[m.id],anon:m.anon,alias:m.alias,au:m.au}}
       for(const id in R){ // books that only exist remotely
-        if(have[id])continue;const r=R[id];ghStat('downloading '+r.title+'…');
+        if(have[id])continue;const r=R[id];ghStat('downloading '+(r.anon?(r.alias||'a book'):r.title)+'…');
         const buf=await ghRaw(r.file);
         await tx('d','readwrite',s=>s.put({id,buf}));
-        await putM({id,type:r.type,title:r.title,author:r.author,added:Date.now(),pct:r.pct,pos:r.pos,ghSynced:true,ghU:r.u,gs:Date.now()})}
+        await putM({id,type:r.type,title:r.title,author:r.author,added:Date.now(),pct:r.pct,pos:r.pos,ghSynced:true,ghU:r.u,gs:Date.now(),anon:r.anon,alias:r.alias,au:r.au})}
       if(JSON.stringify(N)!==JSON.stringify(R)){
         try{await ghPut('progress.json',btoa(unescape(encodeURIComponent(JSON.stringify(N,null,2)))),f&&f.sha,'sync progress')}
         catch(err){if(/409|422/.test(err.message)&&attempt===0)continue;throw err}}
@@ -524,7 +545,7 @@ document.addEventListener('keydown',e=>{
   const go=d=>{li=none?0:Math.max(0,Math.min(cs.length-1,li+d));cs.forEach((c,i)=>c.classList.toggle('sel',i===li));cs[li]&&cs[li].scrollIntoView({block:'nearest'})};
   if(k==='l'||k==='ArrowRight')go(1);else if(k==='h'||k==='ArrowLeft')go(-1);
   else if(k==='j'||k==='ArrowDown')go(cols);else if(k==='k'||k==='ArrowUp')go(-cols);
-  else if(k==='Enter'&&!none)cs[li].click();else if(k==='x'&&!none)cs[li].querySelector('.x').click();
+  else if(k==='Enter'&&!none)cs[li].click();else if(k==='x'&&!none)cs[li].querySelector('.x').click();else if(k==='p'&&!none)toggleAnon(cs[li].dataset.id);else if(k==='P'&&!none)toggleAnon(cs[li].dataset.id,true);
   else if(k==='a')$('#file').click();else if(k==='s')$('#ghbtn').click();else if(k==='?')toggleHelp();
   else if(k==='t')cycle();else if(k>='1'&&k<='3')setTheme(['light','warm','night'][k-1]);else if(k==='Escape')closeAll();else h=false;
   if(h)e.preventDefault()});
