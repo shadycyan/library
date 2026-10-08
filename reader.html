@@ -357,7 +357,7 @@ async function openEpub(buf){
   rend.hooks.content.register(c=>{
     const st=c.document.createElement('style');
     st.textContent='html,body{background:var(--bg)!important;color:var(--fg)!important;line-height:var(--lh)!important}body *{color:inherit!important;background-color:transparent!important}body,body *:not(pre):not(code){font-family:var(--ff)!important;font-weight:var(--fw)!important;letter-spacing:var(--ls)!important;word-spacing:var(--ws)!important;text-align:var(--jt)!important}p,li{margin-bottom:var(--ps)!important}a,a *{color:var(--ln)!important;font-weight:var(--fw)!important}img,svg{max-width:100%!important}';
-    c.document.head.appendChild(st);applyC(c)});
+    c.document.head.appendChild(st);applyC(c);addSwipe(c.document)});
   applyAll();syncPanel();
   rend.on('relocated',l=>{cur.pct=book.locations.length()?book.locations.percentageFromCfi(l.start.cfi):cur.pct;cur.pos=l.start.cfi;cur.pu=Date.now();putM(cur);upd()});
   rend.on('click',e=>{if(e.target.closest&&e.target.closest('a'))return;const w=e.view||window;if((w.getSelection()+'').trim())return;closeDef();zone(e.clientX,w.innerWidth)});
@@ -387,7 +387,17 @@ $('#sc').onchange=e=>{const v=+e.target.value;
   if(cur.type==='pdf'){pg=v;draw()}else if(book.locations.length())rend.display(book.locations.cfiFromPercentage(v/1000))};
 const next=()=>{if(cur.type==='pdf'){if(pg<pdf.numPages){pg++;draw()}}else rend.next()};
 const prev=()=>{if(cur.type==='pdf'){if(pg>1){pg--;draw()}}else rend.prev()};
-function zone(x,w){const r=x/w;closePops();if(r<.3)prev();else if(r>.7)next();else rd.classList.toggle('ch')}
+function zone(){closePops();rd.classList.toggle('ch')} // tap anywhere = show/hide bars; pages turn by swipe or keyboard
+/* swipe left/right to turn pages (touch only). ignores vertical-ish drags and text-selection drags */
+function addSwipe(el){
+  let x0=null,y0,t0;const w=el.defaultView||window;
+  el.addEventListener('touchstart',e=>{if(e.touches.length!==1){x0=null;return}const t=e.touches[0];x0=t.clientX;y0=t.clientY;t0=Date.now()},{passive:true});
+  el.addEventListener('touchend',e=>{
+    if(x0==null)return;const t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;x0=null;
+    if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy)*1.5||Date.now()-t0>800)return;
+    if((w.getSelection()+'').trim())return;
+    closeDef();dx<0?next():prev()},{passive:true})}
+addSwipe($('#stage'));
 $('#stage').onclick=e=>{if(e.target.closest('#viewer'))return;if((window.getSelection()+'').trim())return;zone(e.clientX,innerWidth)};
 function closePops(){$('#toc').classList.remove('o');$('#pan').classList.remove('o');closeDef()}
 $('#tb').onclick=()=>{$('#pan').classList.remove('o');$('#toc').classList.toggle('o')};
