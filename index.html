@@ -427,7 +427,7 @@ async function openEpub(buf){
     c.document.head.appendChild(st);applyC(c);addSwipe(c.document)});
   applyAll();syncPanel();
   rend.on('relocated',l=>{cur.pct=book.locations.length()?book.locations.percentageFromCfi(l.start.cfi):cur.pct;cur.pos=l.start.cfi;cur.pu=Date.now();autoFin();putM(cur);upd()});
-  rend.on('click',e=>{if(e.target.closest&&e.target.closest('a'))return;const w=e.view||window;if((w.getSelection()+'').trim())return;closeDef();zone(e.clientX,w.innerWidth)});
+  rend.on('click',e=>{if(e.target.closest&&e.target.closest('a'))return;const w=e.view||window;if((w.getSelection()+'').trim())return;zone(e.clientX,w.innerWidth)});
   rend.on('selected',onSelect);rend.on('rendered',()=>hlSoon(120));rend.on('resized',()=>hlSoon(150));
   rend.on('relocated',()=>{closeDef();hlSoon(250)});
   rend.on('keydown',key);
@@ -454,7 +454,7 @@ $('#sc').onchange=e=>{const v=+e.target.value;
   if(cur.type==='pdf'){pg=v;draw()}else if(book.locations.length())rend.display(book.locations.cfiFromPercentage(v/1000))};
 const next=()=>{if(cur.type==='pdf'){if(pg<pdf.numPages){pg++;draw()}}else rend.next()};
 const prev=()=>{if(cur.type==='pdf'){if(pg>1){pg--;draw()}}else rend.prev()};
-function zone(){closePops();rd.classList.toggle('ch')} // tap anywhere = show/hide bars; pages turn by swipe or keyboard
+function zone(){if(anyPop()){closeAll();return}rd.classList.toggle('ch')} // tap anywhere = show/hide bars; pages turn by swipe or keyboard
 /* swipe left/right to turn pages (touch only). ignores vertical-ish drags and text-selection drags */
 function addSwipe(el){
   let x0=null,y0,t0;const w=el.defaultView||window;
