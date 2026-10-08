@@ -297,18 +297,38 @@ async function lib(){
     c.querySelector('.x').onclick=async e=>{e.stopPropagation();if(confirm('remove "'+m.title+'"?')){await tx('m','readwrite',s=>s.delete(m.id));await tx('d','readwrite',s=>s.delete(m.id));lib()}};
     g.appendChild(c)})}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* covers: built locally from the book file (never synced), so any device can make them. used by add-books and by the backfill below */
+const thumb=url=>new Promise(res=>{const i=new Image();i.onload=()=>{const s=Math.min(1,240/i.width),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.75))};i.onerror=()=>res(url);i.src=url});
+async function coverOf(buf,type){
+  const out={};
+  try{
+    if(type==='pdf'){const d=await pdfjsLib.getDocument({data:new Uint8Array(buf.slice(0))}).promise,pg=await d.getPage(1),v=pg.getViewport({scale:.5}),c=document.createElement('canvas');
+      c.width=v.width;c.height=v.height;await pg.render({canvasContext:c.getContext('2d'),viewport:v}).promise;out.cover=c.toDataURL('image/jpeg',.7);d.destroy()}
+    else{const b=ePub(buf.slice(0)),md=await b.loaded.metadata;out.title=md.title;out.author=md.creator;
+      try{await b.loaded.cover;if(b.cover)out.cover=await thumb(await b.archive.createUrl(b.cover,{base64:true}))}catch(e){}b.destroy()}
+  }catch(e){}
+  return out}
+let filling=false;
+async function fillCovers(){ // backfill: any book without a cover (e.g. just downloaded by sync) gets one, once
+  if(filling)return;filling=true;let any=false;
+  try{
+    const ms=await tx('m','readonly',s=>s.getAll());
+    for(const m of ms){
+      if(m.cover||m.cvTried)continue;
+      if(cur&&m.id===cur.id&&rd.style.display==='flex')continue;
+      const d=await tx('d','readonly',s=>s.get(m.id));if(!d)continue;
+      const cv=await coverOf(d.buf,m.type);
+      const fresh=await getM(m.id);if(!fresh)continue; // re-read so progress changed meanwhile isn't overwritten
+      if(cv.cover)fresh.cover=cv.cover;fresh.cvTried=true;await putM(fresh);any=true}
+  }catch(e){}
+  filling=false;if(any)lib()}
 async function addFiles(fs){
   for(const f of fs){
     try{
       const buf=await f.arrayBuffer(),pdf=/\.pdf$/i.test(f.name);
       if(!pdf&&!/\.epub$/i.test(f.name)){toast('skipped '+f.name);continue}
       const m={id:crypto.randomUUID(),type:pdf?'pdf':'epub',title:f.name.replace(/\.\w+$/,''),added:Date.now(),pct:0};
-      try{
-        if(pdf){const p=await pdfjsLib.getDocument({data:new Uint8Array(buf.slice(0))}).promise,pg=await p.getPage(1),v=pg.getViewport({scale:.5}),c=document.createElement('canvas');
-          c.width=v.width;c.height=v.height;await pg.render({canvasContext:c.getContext('2d'),viewport:v}).promise;m.cover=c.toDataURL('image/jpeg',.7)}
-        else{const b=ePub(buf.slice(0)),md=await b.loaded.metadata;m.title=md.title||m.title;m.author=md.creator;
-          try{await b.loaded.cover;if(b.cover)m.cover=await b.archive.createUrl(b.cover,{base64:true})}catch(e){}b.destroy()}
-      }catch(e){}
+      const cv=await coverOf(buf,m.type);if(cv.cover)m.cover=cv.cover;if(cv.title)m.title=cv.title;if(cv.author)m.author=cv.author;m.cvTried=true;
       await tx('d','readwrite',s=>s.put({id:m.id,buf}));await putM(m)
     }catch(e){toast('could not add '+f.name)}
   }lib()}
@@ -341,8 +361,8 @@ async function openEpub(buf){
   applyAll();syncPanel();
   rend.on('relocated',l=>{cur.pct=book.locations.length()?book.locations.percentageFromCfi(l.start.cfi):cur.pct;cur.pos=l.start.cfi;cur.pu=Date.now();putM(cur);upd()});
   rend.on('click',e=>{if(e.target.closest&&e.target.closest('a'))return;const w=e.view||window;if((w.getSelection()+'').trim())return;closeDef();zone(e.clientX,w.innerWidth)});
-  rend.on('selected',onSelect);
-  rend.on('relocated',()=>closeDef());
+  rend.on('selected',onSelect);rend.on('rendered',()=>hlSoon(120));rend.on('resized',()=>hlSoon(150));
+  rend.on('relocated',()=>{closeDef();hlSoon(250)});
   rend.on('keydown',key);
   await rend.display(cur.pos||undefined);renderHL();
   book.loaded.navigation.then(n=>{const t=$('#toc');const add=(items,l)=>items.forEach(i=>{const a=document.createElement('a');a.textContent=i.label.trim();a.style.paddingLeft=(8+l*14)+'px';a.onclick=()=>{rend.display(i.href);closePops()};t.appendChild(a);if(i.subitems)add(i.subitems,l+1)});add(n.toc,0)});
@@ -459,7 +479,7 @@ async function syncAll(manual){
         catch(err){if(/409|422/.test(err.message)&&attempt===0)continue;throw err}}
       for(const[m,u]of post){m.ghU=u;m.gs=Date.now();await putM(m)}
       break}
-    await syncHL();lib();ghStat('synced '+new Date().toLocaleTimeString())
+    await syncHL();lib();ghStat('synced '+new Date().toLocaleTimeString());fillCovers()
   }catch(e){ghStat(/404/.test(e.message)?'sync failed: github says not found. for a private repo this almost always means the token cannot see it: check it is scoped to this repo with Contents set to read and write':'sync failed: '+e.message)}
   finally{syncing=false}}
 $('#gh-sync').onclick=()=>syncAll(true);
@@ -502,6 +522,8 @@ document.addEventListener('keydown',e=>{
 /* highlights (epub): stored per book as {id:{cfi,text,t,u,del}}; merged per highlight by newest u, deletes are tombstones, so no conflict prompt is ever needed */
 let LASTSEL=null,hlShown={};
 const HLS={light:{fill:'#ffd400','fill-opacity':'.4','mix-blend-mode':'multiply'},warm:{fill:'#e0a800','fill-opacity':'.35','mix-blend-mode':'multiply'},night:{fill:'#ffd400','fill-opacity':'.35','mix-blend-mode':'normal'}};
+/* epub.js draws marks in its 'render' hook, which runs BEFORE our 'content' hook applies font/margins/spacing, so a re-rendered page gets marks measured on the unstyled layout. redraw once styling has settled. */
+let hlT;const hlSoon=d=>{clearTimeout(hlT);hlT=setTimeout(renderHL,d)};
 function renderHL(){
   if(!rend||!cur||cur.type!=='epub')return;
   for(const c in hlShown){try{rend.annotations.remove(c,'highlight')}catch(e){}}
@@ -589,6 +611,7 @@ sq.onkeydown=e=>{
 setTheme(S.theme);syncPanel();
 syncUI();autoSync();
 lib().catch(()=>{toast('storage unavailable, books cannot be saved here');$('#empty').hidden=false});
+fillCovers();
 
 /* self-host only: no-ops harmlessly inside a sandboxed artifact preview */
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
