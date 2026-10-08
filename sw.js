@@ -2,6 +2,7 @@
 // shell files come from cache and refresh in the background (stale-while-revalidate), so a new deploy
 // shows up on the second load with no version bump needed.
 const CACHE = 'reader-shell-v4';
+const SHARE = 'reader-shared'; // files shared into the app wait here until the page picks them up
 const SHELL = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png'].map(s => new URL(s, self.location).href);
 // only these hosts are cached at runtime (pinned library versions + fonts). github api responses are never cached.
 const CDN = ['cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
@@ -12,12 +13,27 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))));
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE && k !== SHARE).map(k => caches.delete(k)))));
   self.clients.claim();
 });
 
+// web share target: android share sheet -> this app. stash the files, then redirect to the app, which adds them on load.
+async function stashShared(req) {
+  try {
+    const files = (await req.formData()).getAll('books').filter(f => f && f.name !== undefined);
+    const c = await caches.open(SHARE);
+    let i = 0;
+    for (const f of files) {
+      await c.put(new URL('./_shared/' + Date.now() + '-' + (i++), self.location).href,
+        new Response(f, { headers: { 'x-name': encodeURIComponent(f.name), 'content-type': f.type || 'application/octet-stream' } }));
+    }
+  } catch (err) {}
+  return Response.redirect(new URL('./?shared=1', self.location).href, 303);
+}
+
 self.addEventListener('fetch', e => {
   const req = e.request;
+  if (req.method === 'POST' && new URL(req.url).pathname.endsWith('/share-target')) { e.respondWith(stashShared(req)); return; }
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   const isShell = SHELL.includes(url.origin + url.pathname) || req.mode === 'navigate';

@@ -35,9 +35,9 @@ button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .field{font-size:12px;color:var(--mut);padding:8px 2px 2px}
 .field b{color:var(--fg);font-weight:500;font-size:13px}
 .field .rv{float:right;font-weight:400}
-.sl{-webkit-appearance:none;appearance:none;width:100%;height:20px;background:none;margin:4px 0 0}
+.sl{appearance:none;width:100%;height:20px;background:none;margin:4px 0 0}
 .sl::-webkit-slider-runnable-track{height:4px;background:var(--bd);border-radius:2px}
-.sl::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:var(--fg);margin-top:-7px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.sl::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;background:var(--fg);margin-top:-7px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 .sl::-moz-range-track{height:4px;background:var(--bd);border-radius:2px}
 .sl::-moz-range-thumb{width:18px;height:18px;border:0;border-radius:50%;background:var(--fg)}
 hr{border:0;border-top:1px solid var(--bd);margin:12px 0}
@@ -711,10 +711,25 @@ addEventListener('popstate',()=>{
   if(anyPop())closeAll();else if(rd.style.display==='flex')back();
   setTimeout(syncTrap,0)});
 new MutationObserver(()=>{clearTimeout(trapT);trapT=setTimeout(syncTrap,30)}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class','style']});
+/* share target: pick up files the service worker stashed when you shared an epub/pdf to this app */
+async function takeShared(){
+  if(!('caches' in window))return;
+  try{
+    const c=await caches.open('reader-shared'),keys=await c.keys();if(!keys.length)return;
+    const files=[];
+    for(const k of keys){
+      const r=await c.match(k),b=await r.blob();let name='shared';
+      try{name=decodeURIComponent(r.headers.get('x-name')||'shared')}catch(e){}
+      if(!/\.(epub|pdf)$/i.test(name))name+=/pdf/i.test(b.type||r.headers.get('content-type')||'')?'.pdf':'.epub';
+      files.push(new File([b],name,{type:b.type}));await c.delete(k)}
+    if(history.replaceState)history.replaceState(history.state,'',location.pathname);
+    toast('adding '+files.length+' shared file'+(files.length>1?'s':'')+'…');
+    await addFiles(files);autoSync()
+  }catch(e){}}
 setTheme(S.theme);syncPanel();
 syncUI();autoSync();
 lib().catch(()=>{toast('storage unavailable, books cannot be saved here');$('#empty').hidden=false});
-fillCovers();
+fillCovers();takeShared();
 
 /* self-host only: no-ops harmlessly inside a sandboxed artifact preview */
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});

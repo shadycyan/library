@@ -19,6 +19,7 @@ epub.js 0.3.93 (from jsdelivr: cdnjs only has the old 0.2.x), pdf.js 3.11.174, J
 - search in book (`/`), offline word definitions (`d` or select a word in an epub), epub highlights
 - library states: unread / reading / finished (`e`, or automatic at 98%), filter (`f`) and sort (`o`), synced
 - anonymous books (`p`): alias + plain cover on screen, synced across devices
+- share target (android, installed pwa only): share an epub/pdf from any app to reader and it is added
 - android back button: closes popups first, then returns to the library, then leaves the app
 - swipe to turn pages, tap shows or hides the bars; every action has a key, `?` lists them
 - phone layout under 760px (one-row bar, overflow menu, bottom sheets)
@@ -38,6 +39,7 @@ Repo: `books/<id>.<ext>`, `progress.json`, `highlights.json`.
 - epub.js draws highlights before our styles apply, so they are redrawn after render (`hlSoon`).
 - pdf has no text layer (selection drifted on justified text), so no pdf highlights. pdf search reads cached page text.
 - a GitHub 404 on a private repo usually means the token cannot see that repo.
+- share target is registered at install time: after changing `manifest.json`, reinstall the app (or wait for chrome to update it)
 - `sw.js` refreshes the app files in the background and never caches api.github.com.
 
 ## not done
