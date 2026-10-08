@@ -109,6 +109,7 @@ button:active{transform:none}
 #sr a{padding:6px 8px;cursor:pointer;font-size:12px;display:block;border-bottom:1px solid var(--bd)}#sr a span{color:var(--mut)}#sr a:hover,#sr a.cur{background:var(--fg);color:var(--bg)}#sr a:hover span,#sr a.cur span{color:inherit}
 #hl a{padding:6px 8px;cursor:pointer;font-size:12px;display:block;border-bottom:1px solid var(--bd)}#hl a span{color:var(--mut)}#hl a:hover,#hl a.cur{background:var(--fg);color:var(--bg)}#hl a:hover span,#hl a.cur span{color:inherit}
 #hl a button{border:0;padding:0 4px;float:right}
+#wl .wr{padding:7px 8px;font-size:12px;border-bottom:1px solid var(--bd)}#wl .wr .c{color:var(--mut)}#wl .wr button{border:0;padding:0 4px;float:right}#def .hw span button[onclick^=saveWord]{font-size:12px;border:1px solid var(--bd)!important;color:var(--fg)!important;padding:2px 8px}
 .pop{border:1px solid var(--fg)}
 #help pre{margin:0;font:12px/1.5 var(--mono);white-space:pre;overflow:auto}
 .card.sel .cv{outline:2px solid var(--fg);outline-offset:3px}.card.sel b{text-decoration:underline}
@@ -125,7 +126,7 @@ i.k,i.w,i.m{font-style:normal}.m{display:none}
  #sb,#zb,#hb{display:none}
  #sq,#lk{display:none;font-size:16px;padding:8px 10px}
  #top.qa #sq,#top.qb #lk{display:block;order:9;flex:1 0 100%;width:100%}
- #toc,#pan,#sr,#hl,#ghpan{left:8px!important;right:8px!important;width:auto!important;max-width:none!important;top:calc(54px + env(safe-area-inset-top,0px))!important}
+ #toc,#pan,#sr,#hl,#wl,#ghpan{left:8px!important;right:8px!important;width:auto!important;max-width:none!important;top:calc(54px + env(safe-area-inset-top,0px))!important}
  #ghpan{position:fixed!important}
  #more{right:8px;left:auto;width:240px;top:calc(54px + env(safe-area-inset-top,0px))}
  #more button{width:100%;text-align:left;min-height:40px;margin:0 0 4px}
@@ -142,7 +143,7 @@ i.k,i.w,i.m{font-style:normal}.m{display:none}
 </head>
 <body>
 <div id="lib">
-  <header><h1>library</h1><div style="display:flex;gap:8px"><button onclick="toggleHelp()"><i class="k">[?] </i>help</button><button id="ghbtn"><i class="k">[s] </i>sync</button><label><button onclick="this.nextElementSibling.click()"><i class="k">[a] </i>add books</button><input type="file" id="file" accept=".epub,.pdf,application/epub+zip,application/pdf" multiple hidden></label></div></header>
+  <header><h1>library</h1><div style="display:flex;gap:8px"><button onclick="toggleHelp()"><i class="k">[?] </i>help</button><button onclick="openWL()"><i class="k">[W] </i>words</button><button id="ghbtn"><i class="k">[s] </i>sync</button><label><button onclick="this.nextElementSibling.click()"><i class="k">[a] </i>add books</button><input type="file" id="file" accept=".epub,.pdf,application/epub+zip,application/pdf" multiple hidden></label></div></header>
   <div id="lbar"><div class="seg" id="lfil"><button data-f="all">all</button><button data-f="reading">reading</button><button data-f="unread">unread</button><button data-f="done">finished</button></div><button id="lsort"></button></div>
   <div class="pop" id="ghpan" style="position:fixed;top:70px;right:20px;width:280px">
     <div class="field"><b>github repo</b></div>
@@ -155,13 +156,13 @@ i.k,i.w,i.m{font-style:normal}.m{display:none}
     <div id="gh-stat" class="field" style="text-align:center"></div>
   </div>
   <div id="grid"></div>
-  <div id="hint">h j k l move &middot; enter open &middot; x remove &middot; a add &middot; s sync &middot; p anon &middot; f filter &middot; o sort &middot; e finished &middot; t theme &middot; ? help</div>
+  <div id="hint">h j k l move &middot; enter open &middot; x remove &middot; a add &middot; s sync &middot; p anon &middot; f filter &middot; o sort &middot; e finished &middot; W words &middot; t theme &middot; ? help</div>
   <div id="empty" hidden>no books yet. drop an epub or pdf anywhere, or press [a].</div>
 </div>
 <div id="rd">
   <div id="top"><button id="bk"><i class="k">[esc] </i><i class="w">library</i><i class="m">‹</i></button><span id="tt"></span><input id="sq" placeholder="[/] search book" autocomplete="off" spellcheck="false"><input id="lk" placeholder="[d] define word" autocomplete="off" spellcheck="false"><button id="tb"><i class="k">[c] </i><i class="w">contents</i><i class="m">toc</i></button><button id="sb"><i class="k">[b] </i>status bar</button><button id="zb"><i class="k">[z] </i>fullscreen</button><button id="ab"><i class="k">[a] </i><i class="w">appearance</i><i class="m">Aa</i></button><button id="hb"><i class="k">[?] </i>help</button><button id="mb" class="m">⋯</button></div>
   <div class="pop" id="toc"></div>
-  <div class="pop" id="more"><button data-a="sq">search in book</button><button data-a="lk">define a word</button><button data-a="hl">highlights</button><button data-a="sb">status bar on / off</button><button data-a="zb">fullscreen</button><button data-a="an">anonymous on / off</button><button data-a="dn">finished on / off</button><button data-a="hb">help</button></div>
+  <div class="pop" id="more"><button data-a="sq">search in book</button><button data-a="lk">define a word</button><button data-a="hl">highlights</button><button data-a="wl">saved words</button><button data-a="sb">status bar on / off</button><button data-a="zb">fullscreen</button><button data-a="an">anonymous on / off</button><button data-a="dn">finished on / off</button><button data-a="hb">help</button></div>
   <div class="pop" id="hl" style="left:12px;right:auto;width:520px;max-width:92vw;gap:0"></div>
   <div class="pop" id="sr" style="left:12px;right:auto;width:520px;max-width:92vw;gap:0"></div>
   <div class="pop" id="pan">
@@ -199,6 +200,7 @@ i.k,i.w,i.m{font-style:normal}.m{display:none}
   p                  anonymous    P       set shown name
   f                  filter       o       sort order
   e                  finished on/off
+  W                  saved words
   1 2 3              light / warm / night
 
  reading
@@ -210,6 +212,7 @@ i.k,i.w,i.m{font-style:normal}.m{display:none}
   H         highlight selection (epub)   v   list highlights
   p         anonymous on/off   P   set the shown name
   e         finished on/off (also set automatically at 98%)
+  s         save the looked-up word   W   saved words
   c         contents          a   appearance panel
   m         top bar           b   status bar (oled: off)
   z         fullscreen        t   cycle theme
@@ -220,6 +223,7 @@ i.k,i.w,i.m{font-style:normal}.m{display:none}
   + -  size       [ ]  line height     , .  margins
   y    font       u    justify         o    bolder
   w    scroll mode</pre></div>
+<div class="pop" id="wl" style="position:fixed;top:60px;left:12px;right:auto;width:520px;max-width:92vw;gap:0"></div>
 <div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s), root=document.documentElement;
@@ -232,7 +236,7 @@ const FONTS={serif:'Georgia,"Iowan Old Style","Times New Roman",serif',lit:'Lite
 const toast=m=>{const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t.h);t.h=setTimeout(()=>t.style.display='none',3000)};
 
 /* storage: m = metadata, d = file bytes */
-const db=new Promise((res,rej)=>{const r=indexedDB.open('books',2);r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains('m'))d.createObjectStore('m',{keyPath:'id'});if(!d.objectStoreNames.contains('d'))d.createObjectStore('d',{keyPath:'id'});if(!d.objectStoreNames.contains('dict'))d.createObjectStore('dict',{keyPath:'w'})};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const db=new Promise((res,rej)=>{const r=indexedDB.open('books',3);r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains('m'))d.createObjectStore('m',{keyPath:'id'});if(!d.objectStoreNames.contains('d'))d.createObjectStore('d',{keyPath:'id'});if(!d.objectStoreNames.contains('dict'))d.createObjectStore('dict',{keyPath:'w'});if(!d.objectStoreNames.contains('words'))d.createObjectStore('words',{keyPath:'w'})};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
 const tx=async(st,mode,f)=>{const d=await db;return new Promise((res,rej)=>{const t=d.transaction(st,mode);const q=f(t.objectStore(st));t.oncomplete=()=>res(q.result);t.onerror=()=>rej(t.error)})};
 const getM=id=>tx('m','readonly',s=>s.get(id)), putM=m=>tx('m','readwrite',s=>s.put(m));
 
@@ -299,20 +303,30 @@ async function lookup(word){
   try{let r=await tx('dict','readonly',s=>s.get(w));
     if(r&&r.l)r=await tx('dict','readonly',s=>s.get(r.l));
     return r&&r.e?r:null}catch(e){return null}}
-function closeDef(){$('#def').classList.remove('o')}
+let DEFCUR=null;
+function closeDef(){DEFCUR=null;$('#def').classList.remove('o')}
+function ctxOf(sel,text){ // the sentence around a selected word, for the flashcard
+  try{
+    let n=sel.getRangeAt(0).commonAncestorContainer;while(n&&n.nodeType!==1)n=n.parentNode;
+    const blk=n.closest('p,li,blockquote,dd,div')||n,t=blk.textContent.replace(/\s+/g,' ').trim(),i=t.toLowerCase().indexOf(text.toLowerCase());
+    if(i<0)return t.slice(0,240);
+    const a=Math.max(t.lastIndexOf('. ',i),t.lastIndexOf('? ',i),t.lastIndexOf('! ',i)),s=a<0?0:a+2;
+    const ends=['. ','? ','! '].map(x=>t.indexOf(x,i+text.length)).filter(x=>x>=0);
+    return t.slice(s,ends.length?Math.min(...ends)+1:t.length).trim().slice(0,300)
+  }catch(e){return ''}}
 async function onSelect(cfiRange,contents){
   const sel=contents.window.getSelection(),text=(sel&&sel.toString()||'').trim();
   LASTSEL=text?{cfi:cfiRange,text}:null;if(!text||/\s/.test(text)){closeDef();return}
-  const rec=await lookup(text);
+  const ctx=ctxOf(sel,text),rec=await lookup(text);
   const rects=sel.getRangeAt(0).getClientRects();if(!rects.length)return;
   const fr=contents.window.frameElement,fb=fr.getBoundingClientRect(),rb=rects[0];
-  showDef(text,rec,fb.left+rb.left+rb.width/2,fb.top+rb.bottom)}
-function showDef(word,rec,x,y){
-  const d=$('#def');
-  if(!rec){d.innerHTML=`<div class="hw">${esc(word)}<button onclick="closeDef()">&times;</button></div><div class="pos">not found</div>`}
+  showDef(text,rec,fb.left+rb.left+rb.width/2,fb.top+rb.bottom,ctx)}
+function showDef(word,rec,x,y,ctx){
+  const d=$('#def');DEFCUR={word,rec,ctx};
+  if(!rec){d.innerHTML=`<div class="hw">${esc(word)}<span><button onclick="saveWord()"><i class="k">[s] </i>save</button><button onclick="closeDef()">&times;</button></span></div><div class="pos">not found</div>`}
   else{
     const body=rec.e.map(e=>`<div class="pos">${esc(e.p)}${e.ipa?' &nbsp;'+esc(e.ipa):''}</div><ol>${e.g.map(g=>`<li>${esc(g)}</li>`).join('')}</ol>${(e.x||[]).map(x=>`<div class="ex">"${esc(x)}"</div>`).join('')}${e.et?`<div class="ex">origin: ${esc(e.et)}</div>`:''}`).join('<hr style="margin:8px 0">');
-    d.innerHTML=`<div class="hw">${esc(word)}<button onclick="closeDef()">&times;</button></div>${body}<div class="att">via Wiktionary, CC BY-SA</div>`}
+    d.innerHTML=`<div class="hw">${esc(word)}<span><button onclick="saveWord()"><i class="k">[s] </i>save</button><button onclick="closeDef()">&times;</button></span></div>${body}<div class="att">via Wiktionary, CC BY-SA</div>`}
   const vw=innerWidth,vh=innerHeight;let left=Math.min(Math.max(8,x-130),vw-268),top=Math.min(y+8,vh-8);
   d.style.left=left+'px';d.style.top=top+'px';d.style.right='auto';d.style.bottom='auto';
   d.classList.add('o')}
@@ -490,7 +504,7 @@ function key(e){
   else if(k==='Escape'){anyPop()?closeAll():back()}else if(k==='t')cycle();else if(k==='m')rd.classList.toggle('ch');else if(k==='z')toggleFS();
   else if(k==='Home'||k==='g')jump(-1);else if(k==='End'||k==='G')jump(1);
   else if(k==='c')$('#tb').click();else if(k==='a')$('#ab').click();else if(k==='b')toggleStat();else if(k==='?')toggleHelp();
-  else if(k==='/')focusSearch();else if(k==='d')openQ('lk');else if(k==='n'&&SR.items.length)gotoRes(SR.i+1,false);else if(k==='N'&&SR.items.length)gotoRes(SR.i-1,false);else if(k==='H')addHL();else if(k==='v')openHL();else if(k==='p')toggleAnon(cur.id);else if(k==='P')toggleAnon(cur.id,true);else if(k==='e')toggleDone(cur.id)
+  else if(k==='/')focusSearch();else if(k==='d')openQ('lk');else if(k==='n'&&SR.items.length)gotoRes(SR.i+1,false);else if(k==='N'&&SR.items.length)gotoRes(SR.i-1,false);else if(k==='H')addHL();else if(k==='v')openHL();else if(k==='p')toggleAnon(cur.id);else if(k==='P')toggleAnon(cur.id,true);else if(k==='e')toggleDone(cur.id);else if(k==='s')saveWord();else if(k==='W')openWL()
   else if(k>='1'&&k<='3')setTheme(['light','warm','night'][k-1]);else if(typo(k)){}
   else if(k==='+'||k==='=')cur.type==='pdf'||setSize(1);else if(k==='-')cur.type==='pdf'||setSize(-1);
   else h=false;
@@ -561,7 +575,7 @@ async function syncAll(manual){
         catch(err){if(/409|422/.test(err.message)&&attempt===0)continue;throw err}}
       for(const[m,u]of post){m.ghU=u;m.gs=Date.now();await putM(m)}
       break}
-    await syncHL();lib();ghStat('synced '+new Date().toLocaleTimeString());fillCovers()
+    await syncHL();await syncWords();lib();ghStat('synced '+new Date().toLocaleTimeString());fillCovers()
   }catch(e){ghStat(/404/.test(e.message)?'sync failed: github says not found. for a private repo this almost always means the token cannot see it: check it is scoped to this repo with Contents set to read and write':'sync failed: '+e.message)}
   finally{syncing=false}}
 $('#gh-sync').onclick=()=>syncAll(true);
@@ -596,7 +610,7 @@ document.addEventListener('keydown',e=>{
   const go=d=>{li=none?0:Math.max(0,Math.min(cs.length-1,li+d));cs.forEach((c,i)=>c.classList.toggle('sel',i===li));cs[li]&&cs[li].scrollIntoView({block:'nearest'})};
   if(k==='l'||k==='ArrowRight')go(1);else if(k==='h'||k==='ArrowLeft')go(-1);
   else if(k==='j'||k==='ArrowDown')go(cols);else if(k==='k'||k==='ArrowUp')go(-cols);
-  else if(k==='Enter'&&!none)cs[li].click();else if(k==='x'&&!none)cs[li].querySelector('.x').click();else if(k==='p'&&!none)toggleAnon(cs[li].dataset.id);else if(k==='P'&&!none)toggleAnon(cs[li].dataset.id,true);else if(k==='e'&&!none)toggleDone(cs[li].dataset.id);else if(k==='f')cycleFilter();else if(k==='o')cycleSort();
+  else if(k==='Enter'&&!none)cs[li].click();else if(k==='x'&&!none)cs[li].querySelector('.x').click();else if(k==='p'&&!none)toggleAnon(cs[li].dataset.id);else if(k==='P'&&!none)toggleAnon(cs[li].dataset.id,true);else if(k==='e'&&!none)toggleDone(cs[li].dataset.id);else if(k==='f')cycleFilter();else if(k==='W')openWL();else if(k==='o')cycleSort();
   else if(k==='a')$('#file').click();else if(k==='s')$('#ghbtn').click();else if(k==='?')toggleHelp();
   else if(k==='t')cycle();else if(k>='1'&&k<='3')setTheme(['light','warm','night'][k-1]);else if(k==='Escape')closeAll();else h=false;
   if(h)e.preventDefault()});
@@ -650,6 +664,49 @@ async function syncHL(){
 // re-colour highlights when the theme changes
 const _setTheme=setTheme;setTheme=function(t){_setTheme(t);renderHL()};
 
+/* saved words (flashcards): {w, l?, d:[{p,g[],ipa}], ctx, book, t, u, del}. synced via words.json, newest edit per word wins, deletes are tombstones */
+const getW=w=>tx('words','readonly',s=>s.get(w)),putW=x=>tx('words','readwrite',s=>s.put(x)),allW=()=>tx('words','readonly',s=>s.getAll());
+async function saveWord(){
+  const d=DEFCUR;if(!d){toast('look up a word first (d)');return}
+  const w=d.word.toLowerCase().replace(/^[^a-z']+|[^a-z']+$/g,'');if(!w)return;
+  const old=await getW(w);if(old&&!old.del){toast('already saved');return}
+  const now=Date.now(),rec=d.rec,lemma=rec&&rec.e[0]&&rec.e[0].w;
+  await putW({w,l:lemma&&lemma.toLowerCase()!==w?lemma:undefined,d:rec?rec.e.map(e=>({p:e.p,g:e.g.slice(0,3),ipa:e.ipa})):[],ctx:d.ctx||'',book:cur&&rd.style.display==='flex'?dn(cur):'',t:now,u:now});
+  const b=document.querySelector('#def .hw button');if(b)b.textContent='saved \u2713';
+  toast('saved "'+w+'"');autoSync()}
+async function delWord(w){const x=await getW(w);if(!x)return;await putW({w,t:x.t,del:true,u:Date.now()});openWL();autoSync()}
+async function openWL(){
+  const p=$('#wl'),ws=(await allW()).filter(x=>!x.del).sort((a,b)=>b.t-a.t);
+  closeAll();
+  p.innerHTML='<div class="field"><b>'+ws.length+' saved words</b> &middot; <button id="wx">export for anki</button> &middot; esc close</div>'+
+    (ws.map(x=>'<div class="wr"><button data-del="'+esc(x.w)+'">[x]</button><b>'+esc(x.w)+'</b> <span class="c">'+esc((x.d[0]&&x.d[0].p)||'')+'</span> '+esc((x.d[0]&&x.d[0].g[0])||'(no definition)')+(x.ctx?'<br><span class="c">\u201c'+esc(x.ctx.length>120?x.ctx.slice(0,120)+'\u2026':x.ctx)+'\u201d</span>':'')+'</div>').join('')||'<div class="field">none yet. look up a word (d, or select it), then press s</div>');
+  p.classList.add('o');
+  p.querySelectorAll('button[data-del]').forEach(b=>b.onclick=e=>{e.stopPropagation();delWord(b.dataset.del)});
+  $('#wx').onclick=exportWords}
+function buildTSV(ws){ // anki: tab separated, html allowed (the #-lines are anki file headers)
+  const one=s=>String(s||'').replace(/[\t\r\n]+/g,' ');
+  const rows=ws.map(x=>{
+    const front=esc(x.w)+(x.d[0]&&x.d[0].ipa?' <i>'+esc(x.d[0].ipa)+'</i>':'')+(x.l?' <i>('+esc(x.l)+')</i>':'');
+    const back=(x.d.length?x.d.map(e=>'<i>'+esc(e.p)+'</i> '+e.g.map(esc).join('; ')).join('<br>'):'<i>(no definition found)</i>')+(x.ctx?'<br><br>\u201c'+esc(x.ctx)+'\u201d':'')+(x.book?'<br><small>'+esc(x.book)+'</small>':'');
+    return one(front)+'\t'+one(back)});
+  return '#separator:tab\n#html:true\n'+rows.join('\n')+'\n'}
+async function exportWords(){
+  const ws=(await allW()).filter(x=>!x.del).sort((a,b)=>a.t-b.t);
+  if(!ws.length){toast('nothing to export');return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buildTSV(ws)],{type:'text/tab-separated-values'}));a.download='reader-words.tsv';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);toast('exported '+ws.length+' words')}
+async function syncWords(){
+  for(let a=0;a<2;a++){
+    const f=await ghGet('words.json');
+    const R=f?JSON.parse(decodeURIComponent(escape(atob(f.content.replace(/\n/g,''))))):{};
+    const N=JSON.parse(JSON.stringify(R)),L={};let changed=false;
+    for(const x of await allW())L[x.w]=x;
+    for(const w in R)if(!L[w]||(R[w].u||0)>(L[w].u||0))await putW(R[w]);
+    for(const w in L)if(!R[w]||(L[w].u||0)>(R[w].u||0)){N[w]=L[w];changed=true}
+    if(changed){
+      try{await ghPut('words.json',btoa(unescape(encodeURIComponent(JSON.stringify(N,null,2)))),f&&f.sha,'sync words')}
+      catch(err){if(/409|422/.test(err.message)&&a===0)continue;throw err}}
+    break}}
 /* search in book: epub via epub.js section.find, pdf via per-page text (cached), no text layer needed */
 let SR={q:'',items:[],i:-1},srTok=0,pdfTxt={};
 const sq=$('#sq');
@@ -659,7 +716,7 @@ if(matchMedia('(max-width:760px)').matches){sq.placeholder='search book';$('#lk'
 [sq,$('#lk')].forEach(i=>i.addEventListener('blur',()=>setTimeout(()=>$('#top').classList.remove('qa','qb'),150)));
 $('#mb').onclick=()=>{const m=$('#more'),was=m.classList.contains('o');closeAll();m.classList.toggle('o',!was)};
 $('#more').onclick=e=>{const a=e.target.dataset&&e.target.dataset.a;if(!a)return;$('#more').classList.remove('o');
-  if(a==='sq'||a==='lk')openQ(a);else if(a==='hl')openHL();else if(a==='an')toggleAnon(cur.id);else if(a==='dn')toggleDone(cur.id);else $('#'+a).click()};
+  if(a==='sq'||a==='lk')openQ(a);else if(a==='hl')openHL();else if(a==='wl')openWL();else if(a==='an')toggleAnon(cur.id);else if(a==='dn')toggleDone(cur.id);else $('#'+a).click()};
 async function doSearch(q){
   const my=++srTok,out=[],pop=$('#sr');closeAll();
   pop.innerHTML='<div class="field">searching…</div>';pop.classList.add('o');

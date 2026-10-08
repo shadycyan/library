@@ -18,6 +18,7 @@ epub.js 0.3.93 (from jsdelivr: cdnjs only has the old 0.2.x), pdf.js 3.11.174, J
 - library with covers and progress; epub (paged or scroll) and pdf; light / warm / night themes; typography settings
 - search in book (`/`), offline word definitions (`d` or select a word in an epub), epub highlights
 - library states: unread / reading / finished (`e`, or automatic at 98%), filter (`f`) and sort (`o`), synced
+- saved words (`s` on a definition, `W` for the list): keeps the definition, the sentence and the book, exports a tsv for Anki, synced
 - anonymous books (`p`): alias + plain cover on screen, synced across devices
 - share target (android, installed pwa only): share an epub/pdf from any app to reader and it is added
 - android back button: closes popups first, then returns to the library, then leaves the app
@@ -26,8 +27,8 @@ epub.js 0.3.93 (from jsdelivr: cdnjs only has the old 0.2.x), pdf.js 3.11.174, J
 - auto-sync: on load, on closing a book, when the tab hides/shows, when back online, every 5 min
 
 ## data
-IndexedDB `books` v2: `m` (metadata: id, type, title, author, cover, pct, pos, `hl` highlights, `anon`/`alias`, sync fields), `d` (file bytes), `dict` (words).
-Repo: `books/<id>.<ext>`, `progress.json`, `highlights.json`.
+IndexedDB `books` v2: `m` (metadata: id, type, title, author, cover, pct, pos, `hl` highlights, `anon`/`alias`, sync fields), `d` (file bytes), `dict` (dictionary), `words` (saved words).
+Repo: `books/<id>.<ext>`, `progress.json`, `highlights.json`, `words.json`.
 
 ## sync rules
 - progress: prompt only if both devices moved since the last sync, otherwise newest wins
