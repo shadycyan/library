@@ -16,6 +16,7 @@ epub.js 0.3.93 (from jsdelivr: cdnjs only has the old 0.2.x), pdf.js 3.11.174, J
 
 ## features
 - library with covers and progress; epub (paged or scroll) and pdf; light / warm / night themes; typography settings
+- dictionary import keeps every entry per word (noun, verb, ...) and merges with what is stored, so re-importing is safe
 - search in book (`/`), offline word definitions (`d` or select a word in an epub), epub highlights
 - library states: unread / reading / finished (`e`, or automatic at 98%), filter (`f`) and sort (`o`), synced
 - saved words (`s` on a definition, `W` for the list): keeps the definition, the sentence and the book, exports a tsv for Anki, synced

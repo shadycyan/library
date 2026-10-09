@@ -271,8 +271,22 @@ async function importDict(file){
   $('#dictstat').innerHTML='importing… <div id="pb"><i></i></div>';
   const bar=$('#pb i');
   const rs=file.stream().getReader(),dec=new TextDecoder();
-  let buf='',read=0,batch=[],n=0;
-  const flush=async()=>{if(!batch.length)return;const rows=batch;batch=[];await tx('dict','readwrite',s=>{rows.forEach(r=>s.put(r));return s.get('__meta__')})};
+  let buf='',read=0,batch=new Map(),n=0;
+  // one word can have several entries (noun, verb, ...): group them per word, and merge with whatever is already stored for that word
+  const add=o=>{
+    if(o.t==='e'){const w=o.w.toLowerCase(),b=batch.get(w);if(b&&b.e)b.e.push(o);else batch.set(w,{e:[o]});n++}
+    else if(o.t==='f'){batch.set(o.w,{l:o.l});n++}};
+  async function flush(){
+    if(!batch.size)return;const rows=batch;batch=new Map();const d=await db;
+    await new Promise((res,rej)=>{
+      const t=d.transaction('dict','readwrite'),s=t.objectStore('dict');
+      rows.forEach((v,w)=>{
+        if(v.l){s.put({w,l:v.l});return}
+        const g=s.get(w);
+        g.onsuccess=()=>{const e=(g.result&&g.result.e)||[];
+          v.e.forEach(x=>{if(!e.some(o=>o.p===x.p&&(o.g||[])[0]===(x.g||[])[0]))e.push(x)}); // re-importing never duplicates
+          s.put({w,e})}});
+      t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})}
   try{
     while(true){
       const {done,value}=await rs.read();
@@ -281,17 +295,13 @@ async function importDict(file){
       let i;while((i=buf.indexOf('\n'))>=0){
         const line=buf.slice(0,i);buf=buf.slice(i+1);
         if(!line.trim())continue;
-        try{const o=JSON.parse(line);
-          if(o.t==='e')batch.push({w:o.w.toLowerCase(),e:[o]});
-          else if(o.t==='f')batch.push({w:o.w,l:o.l});
-          n++
-        }catch(e){}
-        if(batch.length>=1500)await flush();
+        try{add(JSON.parse(line))}catch(e){}
+        if(batch.size>=1500)await flush();
       }
       if(file.size)bar.style.width=Math.min(100,read/file.size*100)+'%';
       $('#dictstat').firstChild.textContent='importing… '+n.toLocaleString()+' entries ';
     }
-    if(buf.trim())try{const o=JSON.parse(buf);if(o.t==='e')batch.push({w:o.w.toLowerCase(),e:[o]});else if(o.t==='f')batch.push({w:o.w,l:o.l});n++}catch(e){}
+    if(buf.trim())try{add(JSON.parse(buf))}catch(e){}
     await flush();
     await tx('dict','readwrite',s=>s.put({w:'__meta__',n}));
     toast('dictionary imported: '+n.toLocaleString()+' entries');
@@ -325,8 +335,8 @@ function showDef(word,rec,x,y,ctx){
   const d=$('#def');DEFCUR={word,rec,ctx};
   if(!rec){d.innerHTML=`<div class="hw">${esc(word)}<span><button onclick="saveWord()"><i class="k">[s] </i>save</button><button onclick="closeDef()">&times;</button></span></div><div class="pos">not found</div>`}
   else{
-    const body=rec.e.map(e=>`<div class="pos">${esc(e.p)}${e.ipa?' &nbsp;'+esc(e.ipa):''}</div><ol>${e.g.map(g=>`<li>${esc(g)}</li>`).join('')}</ol>${(e.x||[]).map(x=>`<div class="ex">"${esc(x)}"</div>`).join('')}${e.et?`<div class="ex">origin: ${esc(e.et)}</div>`:''}`).join('<hr style="margin:8px 0">');
-    d.innerHTML=`<div class="hw">${esc(word)}<span><button onclick="saveWord()"><i class="k">[s] </i>save</button><button onclick="closeDef()">&times;</button></span></div>${body}<div class="att">via Wiktionary, CC BY-SA</div>`}
+    const body=rec.e.slice(0,5).map(e=>`<div class="pos">${esc(e.p)}${e.ipa?' &nbsp;'+esc(e.ipa):''}</div><ol>${e.g.map(g=>`<li>${esc(g)}</li>`).join('')}</ol>${(e.x||[]).map(x=>`<div class="ex">"${esc(x)}"</div>`).join('')}${e.et?`<div class="ex">origin: ${esc(e.et)}</div>`:''}`).join('<hr style="margin:8px 0">');
+    d.innerHTML=`<div class="hw">${esc(word)}<span><button onclick="saveWord()"><i class="k">[s] </i>save</button><button onclick="closeDef()">&times;</button></span></div>${body}${rec.e.length>5?'<div class="ex">+'+(rec.e.length-5)+' more</div>':''}<div class="att">via Wiktionary, CC BY-SA</div>`}
   const vw=innerWidth,vh=innerHeight;let left=Math.min(Math.max(8,x-130),vw-268),top=Math.min(y+8,vh-8);
   d.style.left=left+'px';d.style.top=top+'px';d.style.right='auto';d.style.bottom='auto';
   d.classList.add('o')}
