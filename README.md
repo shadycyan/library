@@ -52,4 +52,4 @@ Repo: `books/<id>.<ext>`, `progress.json`, `highlights.json`, `words.json`.
 ## working on it
 - Sections are marked `/* library */`, `/* dictionary */`, `/* sync */`, `/* highlights */`, `/* search in book */`.
 - After edits, syntax-check the inline script (extract it, run `new Function`).
-- Layout checks: serve the folder on localhost and screenshot with `puppeteer-core` + `@sparticuz/chromium`.
+- Real-browser tests: `npm i puppeteer-core @sparticuz/chromium epubjs@0.3.93 jszip@3.10.1 pdfjs-dist@3.11.174`, serve the folder on localhost, and answer the CDN script requests from `node_modules`. Serve `pdf.worker.min.js` from a second localhost port (a worker's request can't be intercepted). A real epub: `futurepress/epub.js` `test/fixtures/alice.epub`.

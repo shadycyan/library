@@ -395,7 +395,7 @@ async function coverOf(buf,type){
   try{
     if(type==='pdf'){const d=await pdfjsLib.getDocument({data:new Uint8Array(buf.slice(0))}).promise,pg=await d.getPage(1),v=pg.getViewport({scale:.5}),c=document.createElement('canvas');
       c.width=v.width;c.height=v.height;await pg.render({canvasContext:c.getContext('2d'),viewport:v}).promise;out.cover=c.toDataURL('image/jpeg',.7);d.destroy()}
-    else{const b=ePub(buf.slice(0)),md=await b.loaded.metadata;out.title=md.title;out.author=md.creator;
+    else{const b=ePub(buf.slice(0),{replacements:'none'}),md=await b.loaded.metadata;out.title=md.title;out.author=md.creator;
       try{await b.loaded.cover;if(b.cover)out.cover=await thumb(await b.archive.createUrl(b.cover,{base64:true}))}catch(e){}b.destroy()}
   }catch(e){}
   return out}
@@ -448,16 +448,16 @@ async function openEpub(buf){
   rend.hooks.content.register(c=>{
     const st=c.document.createElement('style');
     st.textContent='html,body{background:var(--bg)!important;color:var(--fg)!important;line-height:var(--lh)!important}body *{color:inherit!important;background-color:transparent!important}body,body *:not(pre):not(code){font-family:var(--ff)!important;font-weight:var(--fw)!important;letter-spacing:var(--ls)!important;word-spacing:var(--ws)!important;text-align:var(--jt)!important}p,li{margin-bottom:var(--ps)!important}a,a *{color:var(--ln)!important;font-weight:var(--fw)!important}img,svg{max-width:100%!important}';
-    c.document.head.appendChild(st);applyC(c);addSwipe(c.document)});
+    c.document.head.appendChild(st);applyC(c);addSwipe(c.document);c.document.addEventListener('keydown',key)});
   applyAll();syncPanel();
   rend.on('relocated',l=>{cur.pct=book.locations.length()?book.locations.percentageFromCfi(l.start.cfi):cur.pct;cur.pos=l.start.cfi;cur.pu=Date.now();autoFin();putM(cur);upd()});
   rend.on('click',e=>{if(e.target.closest&&e.target.closest('a'))return;const w=e.view||window;if((w.getSelection()+'').trim())return;zone(e.clientX,w.innerWidth)});
   rend.on('selected',onSelect);rend.on('rendered',()=>hlSoon(120));rend.on('resized',()=>hlSoon(150));
   rend.on('relocated',()=>{closeDef();hlSoon(250)});
-  rend.on('keydown',key);
+  
   await rend.display(cur.pos||undefined);renderHL();
   book.loaded.navigation.then(n=>{const t=$('#toc');const add=(items,l)=>items.forEach(i=>{const a=document.createElement('a');a.textContent=i.label.trim();a.style.paddingLeft=(8+l*14)+'px';a.onclick=()=>{rend.display(i.href);closePops()};t.appendChild(a);if(i.subitems)add(i.subitems,l+1)});add(n.toc,0)});
-  book.ready.then(()=>book.locations.generate(1200)).then(()=>{$('#sc').disabled=false;upd()}).catch(()=>{})}
+  book.ready.then(()=>book.locations.generate(1200)).then(()=>{$('#sc').disabled=false;try{const l=rend.location;if(l&&l.start)cur.pct=book.locations.percentageFromCfi(l.start.cfi)}catch(e){}upd()}).catch(()=>{})}
 async function openPdf(buf){pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;pg=Math.min(cur.pos||1,pdf.numPages);$('#sc').min=1;$('#sc').max=pdf.numPages;$('#sc').disabled=false;draw()}
 let drawId=0;
 async function draw(){
