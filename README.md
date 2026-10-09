@@ -23,6 +23,7 @@ epub.js 0.3.93 (from jsdelivr: cdnjs only has the old 0.2.x), pdf.js 3.11.174, J
 - anonymous books (`p`): alias + plain cover on screen, synced across devices
 - share target (android, installed pwa only): share an epub/pdf from any app to reader and it is added
 - android back button: closes popups first, then returns to the library, then leaves the app
+- footnotes open in place (tap the note, `show in book` to go there); tap an image to zoom; `B` jumps back to where you were before a search / contents / link jump; the screen stays on while a book is open (`K` toggles)
 - swipe to turn pages, tap shows or hides the bars; every action has a key, `?` lists them
 - phone layout under 760px (one-row bar, overflow menu, bottom sheets)
 - auto-sync: on load, on closing a book, when the tab hides/shows, when back online, every 5 min
