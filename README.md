@@ -21,6 +21,7 @@ epub.js 0.3.93 (from jsdelivr: cdnjs only has the old 0.2.x), pdf.js 3.11.174, J
 - library states: unread / reading / finished (`e`, or automatic at 98%), filter (`f`) and sort (`o`), synced
 - saved words (`s` on a definition, `W` for the list): keeps the definition, the sentence and the book, exports a tsv for Anki, synced
 - flashcard review (`R`): spaced schedule (again / good / easy), keyboard or touch, progress synced with the words
+- appearance reset (`0` or the button): type, spacing, margins, justify, bold and scroll mode back to defaults; theme is kept
 - anonymous books (`p`): alias + plain cover on screen, synced across devices
 - share target (android, installed pwa only): share an epub/pdf from any app to reader and it is added
 - android back button: closes popups first, then returns to the library, then leaves the app
