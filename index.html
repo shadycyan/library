@@ -188,7 +188,7 @@ i.k,i.w,i.m{font-style:normal}.m{display:none}
     <div class="field"><b>size [+ -]<span class="rv" id="v-size"></span></b><input class="sl" type="range" id="k-size" min="13" max="32" step="1"></div>
     <div class="field"><b>line height ([ / ])<span class="rv" id="v-lh"></span></b><input class="sl" type="range" id="k-lh" min="1.2" max="2.2" step=".05"></div>
     <div class="field"><b>margins (, / .)<span class="rv" id="v-m"></span></b><input class="sl" type="range" id="k-m" min="8" max="64" step="2"></div>
-    <div class="field"><b>max width<span class="rv" id="v-mw"></span></b><input class="sl" type="range" id="k-mw" min="32" max="100" step="2"></div>
+    <div class="field"><b>max width<span class="rv" id="v-mw"></span></b><input class="sl" type="range" id="k-mw" min="32" max="100" step="1"></div>
     <div class="field"><b>paragraph spacing<span class="rv" id="v-ps"></span></b><input class="sl" type="range" id="k-ps" min="0" max="2" step=".1"></div>
     <div class="field"><b>letter spacing<span class="rv" id="v-ls"></span></b><input class="sl" type="range" id="k-ls" min="-1" max="3" step=".2"></div>
     <div class="field"><b>word spacing<span class="rv" id="v-ws"></span></b><input class="sl" type="range" id="k-ws" min="-2" max="10" step=".5"></div>
@@ -196,6 +196,7 @@ i.k,i.w,i.m{font-style:normal}.m{display:none}
     <button class="tgl" id="k-justify"><span>[u] justify text</span><i></i></button>
     <button class="tgl" id="k-bold"><span>[o] bolder text</span><i></i></button>
     <button class="tgl" id="k-scroll"><span>[w] scroll mode</span><i></i></button>
+    <button id="k-reset" style="width:100%;margin-top:8px"><i class="k">[0] </i>reset to defaults</button>
     <hr>
     <div class="field"><b>dictionary</b></div>
     <label><button id="dictbtn" style="width:100%">import dictionary (.ndjson)</button><input type="file" id="dictfile" accept=".ndjson,.jsonl,.txt" hidden></label>
@@ -240,7 +241,7 @@ i.k,i.w,i.m{font-style:normal}.m{display:none}
  appearance (epub)
   + -  size       [ ]  line height     , .  margins
   y    font       u    justify         o    bolder
-  w    scroll mode</pre></div>
+  w    scroll mode    0    reset all</pre></div>
 <div class="pop" id="wl" style="position:fixed;top:60px;left:12px;right:auto;width:520px;max-width:92vw;gap:0"></div>
 <div class="pop" id="rv"></div>
 <div id="toast"></div>
@@ -349,16 +350,27 @@ async function onSelect(cfiRange,contents){
   const ctx=ctxOf(sel,text),rec=await lookup(text);
   const rects=sel.getRangeAt(0).getClientRects();if(!rects.length)return;
   const fr=contents.window.frameElement,fb=fr.getBoundingClientRect(),rb=rects[0];
-  showDef(text,rec,fb.left+rb.left+rb.width/2,fb.top+rb.bottom,ctx)}
-function showDef(word,rec,x,y,ctx){
+  showDef(text,rec,fb.left+rb.left+rb.width/2,fb.top+rb.bottom,ctx,fb.top+rb.top)}
+/* place a popup next to a word: below it if it fits, else above it, else on the roomier side with its own scroll */
+function placePop(d,x,yBottom,yTop){
+  const vw=innerWidth,vh=innerHeight,m=8,gap=8;
+  d.style.maxHeight='';d.style.right='auto';d.style.bottom='auto';d.style.visibility='hidden';
+  d.classList.add('o');                                   // it has to be displayed to be measured
+  const w=d.offsetWidth,h=d.offsetHeight,below=vh-m-(yBottom+gap),above=(yTop-gap)-m;
+  let top;
+  if(h<=below)top=yBottom+gap;
+  else if(h<=above)top=yTop-gap-h;
+  else if(below>=above){const mh=Math.max(120,below);d.style.maxHeight=mh+'px';top=yBottom+gap}
+  else{const mh=Math.max(120,above);d.style.maxHeight=mh+'px';top=yTop-gap-mh}
+  d.style.left=Math.min(Math.max(m,x-w/2),vw-w-m)+'px';
+  d.style.top=Math.max(m,top)+'px';d.style.visibility=''}
+function showDef(word,rec,x,y,ctx,yTop){
   const d=$('#def');DEFCUR={word,rec,ctx};
   if(!rec){d.innerHTML=`<div class="hw">${esc(word)}<span><button onclick="saveWord()"><i class="k">[s] </i>save</button><button onclick="closeDef()">&times;</button></span></div><div class="pos">not found</div>`}
   else{
     const body=rec.e.slice(0,5).map(e=>`<div class="pos">${esc(e.p)}${e.ipa?' &nbsp;'+esc(e.ipa):''}</div><ol>${e.g.map(g=>`<li>${esc(g)}</li>`).join('')}</ol>${(e.x||[]).map(x=>`<div class="ex">"${esc(x)}"</div>`).join('')}${e.et?`<div class="ex">origin: ${esc(e.et)}</div>`:''}`).join('<hr style="margin:8px 0">');
     d.innerHTML=`<div class="hw">${esc(word)}<span><button onclick="saveWord()"><i class="k">[s] </i>save</button><button onclick="closeDef()">&times;</button></span></div>${body}${rec.e.length>5?'<div class="ex">+'+(rec.e.length-5)+' more</div>':''}<div class="att">via Wiktionary, CC BY-SA</div>`}
-  const vw=innerWidth,vh=innerHeight;let left=Math.min(Math.max(8,x-130),vw-268),top=Math.min(y+8,vh-8);
-  d.style.left=left+'px';d.style.top=top+'px';d.style.right='auto';d.style.bottom='auto';
-  d.classList.add('o')}
+  placePop(d,x,y,yTop==null?y:yTop)}
 dictStat();
 
 /* library */
@@ -535,7 +547,7 @@ function key(e){
   else if(k==='Escape'){anyPop()?closeAll():back()}else if(k==='t')cycle();else if(k==='m')rd.classList.toggle('ch');else if(k==='z')toggleFS();
   else if(k==='Home'||k==='g')jump(-1);else if(k==='End'||k==='G')jump(1);
   else if(k==='c')$('#tb').click();else if(k==='a')$('#ab').click();else if(k==='b')toggleStat();else if(k==='?')toggleHelp();
-  else if(k==='/')focusSearch();else if(k==='d')openQ('lk');else if(k==='n'&&SR.items.length)gotoRes(SR.i+1,false);else if(k==='N'&&SR.items.length)gotoRes(SR.i-1,false);else if(k==='H')addHL();else if(k==='v')openHL();else if(k==='p')toggleAnon(cur.id);else if(k==='P')toggleAnon(cur.id,true);else if(k==='e')toggleDone(cur.id);else if(k==='s')saveWord();else if(k==='W')openWL();else if(k==='B')jumpBack();else if(k==='K')toggleAwake();else if(k==='R')openReview()
+  else if(k==='/')focusSearch();else if(k==='d')openQ('lk');else if(k==='n'&&SR.items.length)gotoRes(SR.i+1,false);else if(k==='N'&&SR.items.length)gotoRes(SR.i-1,false);else if(k==='H')addHL();else if(k==='v')openHL();else if(k==='p')toggleAnon(cur.id);else if(k==='P')toggleAnon(cur.id,true);else if(k==='e')toggleDone(cur.id);else if(k==='s')saveWord();else if(k==='W')openWL();else if(k==='B')jumpBack();else if(k==='K')toggleAwake();else if(k==='R')openReview();else if(k==='0'&&cur.type!=='pdf')resetStyle()
   else if(k>='1'&&k<='3')setTheme(['light','warm','night'][k-1]);else if(typo(k)){}
   else if(k==='+'||k==='=')cur.type==='pdf'||setSize(1);else if(k==='-')cur.type==='pdf'||setSize(-1);
   else h=false;
@@ -780,14 +792,13 @@ async function showNote(a,href,c){
     cl.querySelectorAll('a[href]').forEach(x=>{if(/^[\s\u21a9\u21b5\ufe0e\[\]\d.]*$/.test(x.textContent)||/back/i.test((x.getAttribute('epub:type')||'')+' '+x.className))x.remove()});
     const text=cl.textContent.replace(/\s+/g,' ').trim();if(!text)throw 0;
     const fb=c.window.frameElement.getBoundingClientRect(),rb=a.getBoundingClientRect();
-    showFn(text,fb.left+rb.left+rb.width/2,fb.top+rb.bottom,go)
+    showFn(text,fb.left+rb.left+rb.width/2,fb.top+rb.bottom,go,fb.top+rb.top)
   }catch(err){pushJump();rend.display(go)}                     // could not read the note: just go there
   finally{if(sec)sec.unload()}}
-function showFn(text,x,y,go){
+function showFn(text,x,y,go,yTop){
   const d=$('#fn');closeAll();
   d.innerHTML='<div class="hw">note<span><button id="fng"><i class="k">&nbsp;</i>show in book</button><button onclick="closeAll()">&times;</button></span></div><div>'+esc(text.length>900?text.slice(0,900)+'\u2026':text)+'</div>';
-  const vw=innerWidth,vh=innerHeight;d.style.left=Math.min(Math.max(8,x-150),vw-Math.min(300,vw*.78)-8)+'px';d.style.top=Math.min(y+8,vh-120)+'px';d.style.right='auto';d.style.bottom='auto';
-  d.classList.add('o');$('#fng').onclick=()=>{closeAll();pushJump();rend.display(go)}}
+  placePop(d,x,y,yTop==null?y:yTop);$('#fng').onclick=()=>{closeAll();pushJump();rend.display(go)}}
 
 /* keep the screen on while a book is open (screen wake lock), toggle with K */
 let wl=null,wlBusy=false;
@@ -853,6 +864,13 @@ document.addEventListener('keydown',e=>{
   else if(k===' '||k==='Enter'){e.preventDefault();if(RV.i>=RV.q.length)closeAll();else flipRV()}
   else if(RV.flip&&RV.i<RV.q.length&&['1','2','3'].includes(k)){e.preventDefault();gradeRV(+k)}},true);
 const _lib=lib;lib=async function(){await _lib();updateDue()};
+/* reset appearance: type, spacing, margins, justify, bold and scroll mode go back to defaults (theme and keep-screen-on are left alone) */
+const STYLE_DEF={font:'serif',size:19,lh:1.6,m:28,mw:65,ps:1,ls:0,ws:0,justify:false,bold:false,scroll:false};
+function resetStyle(){
+  const wasScroll=S.scroll;Object.assign(S,STYLE_DEF);
+  if(rend&&wasScroll)rend.flow('paginated');
+  applyAll();syncPanel();save();toast('appearance reset to defaults')}
+$('#k-reset').onclick=resetStyle;
 /* search in book: epub via epub.js section.find, pdf via per-page text (cached), no text layer needed */
 let SR={q:'',items:[],i:-1},srTok=0,pdfTxt={};
 const sq=$('#sq');
