@@ -24,6 +24,7 @@ epub.js 0.3.93 (from jsdelivr: cdnjs only has the old 0.2.x), pdf.js 3.11.174, J
 - appearance reset (`0` or the button): type, spacing, margins, justify, bold and scroll mode back to defaults; theme is kept
 - command prompt (`:`): `:42` `:42%` `:/text` `:ch 3` `:theme night` `:size 22` `:open title` `:filter reading` `:sync` and more; tab completes, up/down recalls history, an empty prompt lists every command
 - pdf: fit to width or whole page, zoom (`+ -`, `:zoom 150`, ctrl+wheel, pinch, double-tap), `j`/`k`/space scroll the page and roll over to the next one, contents from the pdf outline, selectable words (define, save with the sentence), search hits highlighted (`:nohl` clears)
+- highlights on epubs and pdfs: select text, then press `H` or tap the highlight button that appears next to the selection (also in the define popup); `v` lists them, tap a highlight to open the list
 - anonymous books (`p`): alias + plain cover on screen, synced across devices
 - share target (android, installed pwa only): share an epub/pdf from any app to reader and it is added
 - android back button: closes popups first, then returns to the library, then leaves the app
@@ -44,7 +45,7 @@ Repo: `books/<id>.<ext>`, `progress.json`, `highlights.json`, `words.json`.
 ## gotchas
 - epub.js paginates with CSS columns. Never set max-width or padding on the book body. Margins and width go on the outer container.
 - epub.js draws highlights before our styles apply, so they are redrawn after render (`hlSoon`).
-- pdf text: pdf.js only names a generic fallback font for its text layer, so words drift when justified. we build one selectable span per word from the raw items (`disableCombineTextItems`) in the page's own embedded font (`item.fontName`). measured on a test pdf: every word within 0.5px at 50% and 250% zoom. pdf highlights are not built yet.
+- pdf text: pdf.js only names a generic fallback font for its text layer, so words drift when justified. we build one selectable span per word from the raw items (`disableCombineTextItems`) in the page's own embedded font (`item.fontName`). measured on a test pdf: every word within 0.5px at 50% and 250% zoom. pdf highlights are stored per page as rectangles in fractions of the page size (so they sit on the same words at any zoom) and sync like epub highlights.
 - a GitHub 404 on a private repo usually means the token cannot see that repo.
 - share target is registered at install time: after changing `manifest.json`, reinstall the app (or wait for chrome to update it)
 - `sw.js` refreshes the app files in the background and never caches api.github.com.

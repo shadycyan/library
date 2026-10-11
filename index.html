@@ -75,6 +75,7 @@ hr{border:0;border-top:1px solid var(--bd);margin:12px 0}
 #pw{display:none;width:100%;height:100%;overflow:auto;position:relative;touch-action:pan-x pan-y;scrollbar-gutter:stable;scrollbar-width:thin}
 #pgw{position:relative;margin:auto;flex:none}
 #cv{display:block}
+#hlp{position:absolute;inset:0;pointer-events:none}#hlp .h{position:absolute}
 #tl{position:absolute;inset:0;overflow:hidden;line-height:1}
 #tl span{position:absolute;white-space:pre;color:transparent;transform-origin:0 0;cursor:text}
 #tl span.hit{background:rgba(255,196,0,.45)}
@@ -130,7 +131,7 @@ button:active{transform:none}
 #zoom{position:fixed!important;inset:0;width:auto!important;max-width:none!important;max-height:none!important;border:0!important;padding:12px;z-index:50;background:var(--bg);align-items:center;justify-content:center;overflow:auto}
 #zoom img{max-width:100%;max-height:100%;object-fit:contain;cursor:zoom-out}
 #jb{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);z-index:7;display:none;background:var(--bg);white-space:nowrap}#jb.o{display:block}
-#wl .wr{padding:7px 8px;font-size:12px;border-bottom:1px solid var(--bd)}#wl .wr .c{color:var(--mut)}#wl .wr button{border:0;padding:0 4px;float:right}#def .hw span button[onclick^=saveWord]{font-size:12px;border:1px solid var(--bd)!important;color:var(--fg)!important;padding:2px 8px}
+#wl .wr{padding:7px 8px;font-size:12px;border-bottom:1px solid var(--bd)}#wl .wr .c{color:var(--mut)}#wl .wr button{border:0;padding:0 4px;float:right}#def .hw span button[onclick^=saveWord],#def .hw span button[onclick^=addHL]{font-size:12px;border:1px solid var(--bd)!important;color:var(--fg)!important;padding:2px 8px}
 .pop{border:1px solid var(--fg)}
 #help pre{margin:0;font:12px/1.5 var(--mono);white-space:pre;overflow:auto}
 .card.sel .cv{outline:2px solid var(--fg);outline-offset:3px}.card.sel b{text-decoration:underline}
@@ -184,6 +185,7 @@ i.k,i.w,i.m{font-style:normal}.m{display:none}
 <div id="rd">
   <div id="top"><button id="bk"><i class="k">[esc] </i><i class="w">library</i><i class="m">‹</i></button><span id="tt"></span><input id="sq" placeholder="[/] search book" autocomplete="off" spellcheck="false"><input id="lk" placeholder="[d] define word" autocomplete="off" spellcheck="false"><button id="tb"><i class="k">[c] </i><i class="w">contents</i><i class="m">toc</i></button><button id="sb"><i class="k">[b] </i>status bar</button><button id="zb"><i class="k">[z] </i>fullscreen</button><button id="ab"><i class="k">[a] </i><i class="w">appearance</i><i class="m">Aa</i></button><button id="hb"><i class="k">[?] </i>help</button><button id="mb" class="m">⋯</button></div>
   <div class="pop" id="toc"></div>
+  <div class="pop" id="hlbar" style="width:auto;padding:4px;gap:0"><button id="hlb"><i class="k">[H] </i>highlight</button></div>
   <div class="pop" id="fn" style="width:300px;max-width:78vw;font-size:14px;line-height:1.45;gap:6px"></div>
   <div class="pop" id="zoom" onclick="closeAll()"></div>
   <button id="jb" onclick="jumpBack()"><i class="k">[B] </i>&#8617; back to where you were</button>
@@ -215,7 +217,7 @@ i.k,i.w,i.m{font-style:normal}.m{display:none}
     </div>
   </div>
   <div class="pop" id="def"></div>
-  <div id="stage"><div id="viewer"></div><div id="pw"><div id="pgw"><canvas id="cv"></canvas><div id="tl"></div></div></div></div>
+  <div id="stage"><div id="viewer"></div><div id="pw"><div id="pgw"><canvas id="cv"></canvas><div id="hlp"></div><div id="tl"></div></div></div></div>
   <div id="bot"><input type="range" id="sc" min="0" max="1000" value="0" disabled><div><span id="bl"></span><span id="br"></span></div></div>
 </div>
 <div class="pop" id="help" onclick="toggleHelp()" style="position:fixed;top:50%;left:50%;right:auto;transform:translate(-50%,-50%);z-index:30;max-width:94vw"><pre>reader shortcuts                       [?] or esc: close
@@ -237,7 +239,7 @@ i.k,i.w,i.m{font-style:normal}.m{display:none}
   g home    G end      start / end
   /         search in book    n / N   next / prev match
   d         define a word (also: select a word in an epub)
-  H         highlight selection (epub)   v   list highlights
+  H         highlight selection (epub, pdf)   v   list highlights
   p         anonymous on/off   P   set the shown name
   e         finished on/off (also set automatically at 98%)
   s         save the looked-up word   W   saved words
@@ -362,7 +364,9 @@ function ctxOf(sel,text){ // the sentence around a selected word, for the flashc
   }catch(e){return ''}}
 async function onSelect(cfiRange,contents){
   const sel=contents.window.getSelection(),text=(sel&&sel.toString()||'').trim();
-  LASTSEL=text?{cfi:cfiRange,text}:null;if(!text||/\s/.test(text)){closeDef();return}
+  LASTSEL=text?{cfi:cfiRange,text}:null;
+  if(!text){closeDef();return}
+  if(/\s/.test(text)){closeDef();const rs=sel.getRangeAt(0).getClientRects();if(rs.length){const f=contents.window.frameElement.getBoundingClientRect(),r=rs[0];showBar(f.left+r.left+r.width/2,f.top+r.bottom,f.top+r.top)}return}
   const ctx=ctxOf(sel,text),rec=await lookup(text);
   const rects=sel.getRangeAt(0).getClientRects();if(!rects.length)return;
   const fr=contents.window.frameElement,fb=fr.getBoundingClientRect(),rb=rects[0];
@@ -382,10 +386,10 @@ function placePop(d,x,yBottom,yTop){
   d.style.top=Math.max(m,top)+'px';d.style.visibility=''}
 function showDef(word,rec,x,y,ctx,yTop){
   const d=$('#def');DEFCUR={word,rec,ctx};
-  if(!rec){d.innerHTML=`<div class="hw">${esc(word)}<span><button onclick="saveWord()"><i class="k">[s] </i>save</button><button onclick="closeDef()">&times;</button></span></div><div class="pos">not found</div>`}
+  if(!rec){d.innerHTML=`<div class="hw">${esc(word)}<span><button onclick="addHL()"><i class="k">[H] </i>highlight</button><button onclick="saveWord()"><i class="k">[s] </i>save</button><button onclick="closeDef()">&times;</button></span></div><div class="pos">not found</div>`}
   else{
     const body=rec.e.slice(0,5).map(e=>`<div class="pos">${esc(e.p)}${e.ipa?' &nbsp;'+esc(e.ipa):''}</div><ol>${e.g.map(g=>`<li>${esc(g)}</li>`).join('')}</ol>${(e.x||[]).map(x=>`<div class="ex">"${esc(x)}"</div>`).join('')}${e.et?`<div class="ex">origin: ${esc(e.et)}</div>`:''}`).join('<hr style="margin:8px 0">');
-    d.innerHTML=`<div class="hw">${esc(word)}<span><button onclick="saveWord()"><i class="k">[s] </i>save</button><button onclick="closeDef()">&times;</button></span></div>${body}${rec.e.length>5?'<div class="ex">+'+(rec.e.length-5)+' more</div>':''}<div class="att">via Wiktionary, CC BY-SA</div>`}
+    d.innerHTML=`<div class="hw">${esc(word)}<span><button onclick="addHL()"><i class="k">[H] </i>highlight</button><button onclick="saveWord()"><i class="k">[s] </i>save</button><button onclick="closeDef()">&times;</button></span></div>${body}${rec.e.length>5?'<div class="ex">+'+(rec.e.length-5)+' more</div>':''}<div class="att">via Wiktionary, CC BY-SA</div>`}
   placePop(d,x,y,yTop==null?y:yTop)}
 dictStat();
 
@@ -490,7 +494,7 @@ async function openBook(id){
   }catch(e){toast('could not open this book');back()}}
 async function back(){
   try{rend&&rend.destroy();book&&book.destroy();pdf&&pdf.destroy()}catch(e){}
-  rend=book=pdf=null;$('#viewer').innerHTML='';$('#viewer').style.maxWidth='';$('#stage').style.padding='';pdfTxt={};SR={q:'',items:[],i:-1};hlShown={};LASTSEL=null;JUMPS=[];OUTL=[];PD={};$('#jb').classList.remove('o');autoSync();rd.style.display='none';$('#lib').style.display='';closePops();lib()}
+  rend=book=pdf=null;$('#viewer').innerHTML='';$('#viewer').style.maxWidth='';$('#stage').style.padding='';pdfTxt={};SR={q:'',items:[],i:-1};hlShown={};LASTSEL=null;JUMPS=[];OUTL=[];PD={};PSEL=null;$('#jb').classList.remove('o');autoSync();rd.style.display='none';$('#lib').style.display='';closePops();lib()}
 async function openEpub(buf){
   book=ePub(buf);
   fitView();rend=book.renderTo('viewer',{width:'100%',height:'100%',flow:S.scroll?'scrolled-doc':'paginated',spread:'none'});
@@ -511,7 +515,7 @@ async function openPdf(buf){
   pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;pg=Math.min(cur.pos||1,pdf.numPages);
   $('#sc').min=1;$('#sc').max=pdf.numPages;$('#sc').disabled=false;$('#stage').style.padding='0';
   draw({edge:'start'});pdfOutline()}
-let drawId=0,PD={},OUTL=[];
+let drawId=0,PD={},OUTL=[],PSEL=null;
 async function pdfOutline(){
   try{
     const ol=await pdf.getOutline();if(!ol||!ol.length)return;
@@ -539,6 +543,7 @@ async function draw(o={}){
   PD={sc,fw,vp:vcss,words:null,spans:null};
   if(o.anchor){pw.scrollLeft=pgw.offsetLeft+o.anchor.fx*pgw.offsetWidth-o.anchor.ax;pw.scrollTop=pgw.offsetTop+o.anchor.fy*pgw.offsetHeight-o.anchor.ay}
   else if(o.edge){pw.scrollTop=o.edge==='end'?pw.scrollHeight:0;pw.scrollLeft=Math.max(0,(pw.scrollWidth-pw.clientWidth)/2)}
+  renderPdfHL();if(o.revealHl){const hh=document.querySelector('#hlp .h[data-id="'+o.revealHl+'"]');if(hh)hh.scrollIntoView({block:'center',inline:'center'})}
   rt=p.render({canvasContext:c.getContext('2d'),viewport:v});try{await rt.promise}catch(e){return}
   if(my!==drawId)return;
   cur.pos=pg;cur.pct=pg/pdf.numPages;cur.pu=Date.now();autoFin();putM(cur);upd();
@@ -583,14 +588,45 @@ function pdfCtx(i){ // the sentence around word i, for the flashcard
   const W=PD.words;if(!W||!W[i])return'';let a=i,b=i;const end=/[.?!]["\u201d')\]]*$/;
   while(a>0&&i-a<40&&!end.test(W[a-1].t))a--;while(b<W.length-1&&b-i<40&&!end.test(W[b].t))b++;
   return W.slice(a,b+1).map(w=>w.t).join(' ').slice(0,300)}
+function selWords(sel){if(!PD.spans||!sel||sel.isCollapsed||!sel.rangeCount)return[];const r=sel.getRangeAt(0),o=[];PD.spans.forEach((s,i)=>{if(r.intersectsNode(s))o.push(i)});return o}
+document.addEventListener('copy',e=>{const sel=getSelection();if(!cur||cur.type!=='pdf'||!sel||sel.isCollapsed||!sel.anchorNode||!$('#tl').contains(sel.anchorNode))return;const ix=selWords(sel);if(!ix.length)return;e.clipboardData.setData('text/plain',ix.map(i=>PD.words[i].t).join(' '));e.preventDefault()});
 async function pdfSelCheck(){
   if(!cur||cur.type!=='pdf'||rd.style.display!=='flex')return;
-  const sel=getSelection();if(!sel||sel.isCollapsed||!sel.anchorNode||!$('#tl').contains(sel.anchorNode))return;
-  const text=sel.toString().trim();if(!text||/\s/.test(text)){closeDef();return}
+  const sel=getSelection();
+  if(!sel||sel.isCollapsed){$('#hlbar').classList.remove('o');return}
+  if(!sel.anchorNode||!$('#tl').contains(sel.anchorNode))return;
+  PSEL=capturePdfSel();
+  const ix=selWords(sel);if(!ix.length)return;const text=ix.length>1?ix.map(i=>PD.words[i].t).join(' '):sel.toString().trim();if(!text)return;
+  if(ix.length>1){closeDef();const r0=sel.getRangeAt(0).getClientRects();if(r0.length)showBar(r0[0].left+r0[0].width/2,r0[0].bottom,r0[0].top);return}
   const n=sel.anchorNode.nodeType===1?sel.anchorNode:sel.anchorNode.parentNode,sp=n.closest&&n.closest('span'),ctx=sp&&sp.dataset.i!=null?pdfCtx(+sp.dataset.i):'';
   const rec=await lookup(text),rc=sel.getRangeAt(0).getClientRects();if(!rc.length)return;
   showDef(text,rec,rc[0].left+rc[0].width/2,rc[0].bottom,ctx,rc[0].top)}
 let selT;document.addEventListener('selectionchange',()=>{clearTimeout(selT);selT=setTimeout(pdfSelCheck,350)});
+/* pdf highlights: stored per page as rectangles in fractions of the page size, so they land in the same place at any zoom */
+function capturePdfSel(){
+  const sel=getSelection();if(!sel||sel.isCollapsed||!sel.anchorNode||!$('#tl').contains(sel.anchorNode))return null;
+  const g=$('#pgw').getBoundingClientRect(),raw=[...sel.getRangeAt(0).getClientRects()].filter(r=>r.width>1&&r.height>1).sort((a,b)=>a.top-b.top||a.left-b.left),out=[];
+  for(const r of raw){const l=out[out.length-1];  // pieces on one line become one bar, so there are no gaps between words
+    if(l&&Math.abs(l.top-r.top)<r.height*.4&&r.left-l.right<r.height*1.2){l.right=Math.max(l.right,r.right);l.top=Math.min(l.top,r.top);l.bottom=Math.max(l.bottom,r.bottom)}
+    else out.push({left:r.left,right:r.right,top:r.top,bottom:r.bottom})}
+  return {page:pg,text:selWords(sel).map(i=>PD.words[i].t).join(' ')||sel.toString().replace(/\s+/g,' ').trim(),rects:out.map(r=>[(r.left-g.left)/g.width,(r.top-g.top)/g.height,(r.right-r.left)/g.width,(r.bottom-r.top)/g.height])}}
+function addPdfHL(){
+  const s=capturePdfSel()||PSEL;
+  if(!s||!s.rects.length||!s.text){toast('select some text first, then press H');return}
+  const L=cur.hl=cur.hl||{};
+  for(const id in L){const x=L[id];if(!x.del&&x.pdf&&x.page===s.page&&x.text===s.text.slice(0,400)){toast('already highlighted');return}}
+  const now=Date.now();L[crypto.randomUUID()]={pdf:1,page:s.page,rects:s.rects,text:s.text.slice(0,400),t:now,u:now};
+  putM(cur);getSelection().removeAllRanges();PSEL=null;closeAll();renderPdfHL();toast('highlighted');autoSync()}
+function renderPdfHL(){
+  const layer=$('#hlp');layer.innerHTML='';
+  if(!cur||cur.type!=='pdf'||!PD.vp)return;
+  const L=cur.hl||{},W=parseFloat($('#cv').style.width),H=parseFloat($('#cv').style.height),c=HLS[S.theme];
+  for(const id in L){const x=L[id];if(x.del||!x.pdf||x.page!==pg)continue;
+    for(const r of x.rects){const d=document.createElement('div');d.className='h';d.dataset.id=id;
+      d.style.cssText='left:'+r[0]*W+'px;top:'+r[1]*H+'px;width:'+r[2]*W+'px;height:'+r[3]*H+'px;background:'+c.fill+';opacity:'+c['fill-opacity']+';mix-blend-mode:'+c['mix-blend-mode'];layer.appendChild(d)}}}
+function pdfHlAt(x,y){for(const h of document.querySelectorAll('#hlp .h')){const b=h.getBoundingClientRect();if(x>=b.left&&x<=b.right&&y>=b.top&&y<=b.bottom)return h.dataset.id}return null}
+function showBar(x,yBottom,yTop){closeAll();placePop($('#hlbar'),x,yBottom,yTop)}   // small "highlight" button next to a selection of several words
+$('#hlb').onclick=()=>addHL();
 /* zoom: keys + - w 0, ctrl+wheel, pinch, double tap */
 function setZoom(z,cx,cy){
   const pw=$('#pw'),pgw=$('#pgw'),r=pw.getBoundingClientRect(),ax=(cx==null?r.left+r.width/2:cx)-r.left,ay=(cy==null?r.top+r.height/2:cy)-r.top;
@@ -637,7 +673,7 @@ function addSwipe(el){
     if((w.getSelection()+'').trim())return;
     closeDef();dx<0?next():prev()},{passive:true})}
 addSwipe($('#stage'));
-$('#stage').onclick=e=>{if(e.target.closest('#viewer'))return;if((window.getSelection()+'').trim())return;if(cur&&cur.type==='pdf'&&!anyPop()){clearTimeout(zT);zT=setTimeout(zone,260);return}zone(e.clientX,innerWidth)};
+$('#stage').onclick=e=>{if(e.target.closest('#viewer'))return;if((window.getSelection()+'').trim())return;if(cur&&cur.type==='pdf'){const hid=pdfHlAt(e.clientX,e.clientY);if(hid){openHL(hid);return}}if(cur&&cur.type==='pdf'&&!anyPop()){clearTimeout(zT);zT=setTimeout(zone,260);return}zone(e.clientX,innerWidth)};
 function closePops(){$('#toc').classList.remove('o');$('#pan').classList.remove('o');closeDef()}
 $('#tb').onclick=()=>{$('#pan').classList.remove('o');$('#toc').classList.toggle('o')};
 $('#ab').onclick=()=>{$('#toc').classList.remove('o');$('#pan').classList.toggle('o')};
@@ -783,29 +819,32 @@ const HLS={light:{fill:'#ffd400','fill-opacity':'.4','mix-blend-mode':'multiply'
 /* epub.js draws marks in its 'render' hook, which runs BEFORE our 'content' hook applies font/margins/spacing, so a re-rendered page gets marks measured on the unstyled layout. redraw once styling has settled. */
 let hlT;const hlSoon=d=>{clearTimeout(hlT);hlT=setTimeout(renderHL,d)};
 function renderHL(){
+  if(cur&&cur.type==='pdf'&&rd.style.display==='flex'){renderPdfHL();return}
   if(!rend||!cur||cur.type!=='epub')return;
   for(const c in hlShown){try{rend.annotations.remove(c,'highlight')}catch(e){}}
   hlShown={};
   const L=cur.hl||{};
   for(const id in L){const x=L[id];if(x.del)continue;try{rend.annotations.highlight(x.cfi,{id},()=>openHL(id),'hl',HLS[S.theme]);hlShown[x.cfi]=id}catch(e){}}}
 function addHL(){
-  if(!cur||cur.type!=='epub'){toast('highlights are epub only for now');return}
+  if(cur&&cur.type==='pdf')return addPdfHL();
+  if(!cur||cur.type!=='epub')return;
   if(!LASTSEL||!LASTSEL.cfi){toast('select some text first, then press H');return}
   const L=cur.hl=cur.hl||{};
   for(const id in L)if(L[id].cfi===LASTSEL.cfi&&!L[id].del){toast('already highlighted');return}
   const now=Date.now();
   L[crypto.randomUUID()]={cfi:LASTSEL.cfi,text:LASTSEL.text.slice(0,400),t:now,u:now};
-  putM(cur);rend.getContents().forEach(c=>c.window.getSelection().removeAllRanges());LASTSEL=null;closeDef();
+  putM(cur);rend.getContents().forEach(c=>c.window.getSelection().removeAllRanges());LASTSEL=null;closeAll();
   renderHL();toast('highlighted');autoSync()}
 function openHL(fid){
-  if(!cur||cur.type!=='epub'){toast('highlights are epub only for now');return}
-  const p=$('#hl'),L=cur.hl||{},items=Object.entries(L).filter(([,x])=>!x.del).sort((a,b)=>a[1].t-b[1].t);
+  if(!cur||(cur.type!=='epub'&&cur.type!=='pdf'))return;
+  const pm=cur.type==='pdf',p=$('#hl'),L=cur.hl||{},y0=x=>((x.rects||[])[0]||[0,0])[1];
+  const items=Object.entries(L).filter(([,x])=>!x.del).sort((a,b)=>pm?((a[1].page-b[1].page)||(y0(a[1])-y0(b[1]))):(a[1].t-b[1].t));
   closeAll();
-  p.innerHTML='<div class="field"><b>'+items.length+' highlights</b> &middot; click to jump &middot; [x] delete &middot; esc close</div>'+(items.map(([id,x])=>'<a data-id="'+id+'"'+(id===fid?' class="cur"':'')+'><span>'+esc(new Date(x.t).toLocaleDateString())+'</span> '+esc(x.text.length>140?x.text.slice(0,140)+'…':x.text)+' <button data-del="'+id+'">[x]</button></a>').join('')||'<div class="field">none yet. select text, then press H</div>');
+  p.innerHTML='<div class="field"><b>'+items.length+' highlights</b> &middot; click to jump &middot; [x] delete &middot; esc close</div>'+(items.map(([id,x])=>'<a data-id="'+id+'"'+(id===fid?' class="cur"':'')+'><span>'+esc(x.pdf?'p.'+x.page:new Date(x.t).toLocaleDateString())+'</span> '+esc(x.text.length>140?x.text.slice(0,140)+'\u2026':x.text)+' <button data-del="'+id+'">[x]</button></a>').join('')||'<div class="field">none yet. select text, then press H</div>');
   p.classList.add('o');
-  p.querySelectorAll('a').forEach(a=>a.onclick=e=>{if(e.target.dataset.del)return;p.classList.remove('o');pushJump();rend.display(L[a.dataset.id].cfi)});
+  p.querySelectorAll('a').forEach(a=>a.onclick=e=>{if(e.target.dataset.del)return;p.classList.remove('o');pushJump();const x=L[a.dataset.id];if(x.pdf){pg=x.page;draw({edge:'start',revealHl:a.dataset.id})}else rend.display(x.cfi)});
   p.querySelectorAll('button[data-del]').forEach(b=>b.onclick=e=>{e.stopPropagation();delHL(b.dataset.del)})}
-function delHL(id){const x=cur.hl[id];cur.hl[id]={cfi:x.cfi,t:x.t,del:true,u:Date.now()};putM(cur);renderHL();openHL();autoSync()}
+function delHL(id){const x=cur.hl[id];cur.hl[id]={...(x.pdf?{pdf:1,page:x.page}:{cfi:x.cfi}),t:x.t,del:true,u:Date.now()};putM(cur);renderHL();openHL();autoSync()}
 async function syncHL(){
   for(let a=0;a<2;a++){
     const f=await ghGet('highlights.json');
