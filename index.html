@@ -67,7 +67,7 @@ hr{border:0;border-top:1px solid var(--bd);margin:12px 0}
 .an{position:absolute;top:4px;left:4px;padding:0 6px;line-height:20px;background:rgba(0,0,0,.55);color:#fff;border:0;opacity:0}.card:hover .an,.an:focus{opacity:1}@media(hover:none){.an{opacity:.8}}.card.anon .an{opacity:1;background:var(--fg);color:var(--bg)}
 #empty{color:var(--mut);text-align:center;padding:90px 0}
 #rd{position:fixed;inset:0;display:none;flex-direction:column;background:var(--bg)}
-#top{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;gap:8px;align-items:center;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(20px) saturate(1.6);-webkit-backdrop-filter:blur(20px) saturate(1.6);border-bottom:1px solid var(--bd);transform:translateY(-101%);transition:transform .18s}
+#top{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;gap:8px;align-items:center;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(20px) saturate(1.6);-webkit-backdrop-filter:blur(20px) saturate(1.6);border-bottom:1px solid var(--bd);transform:translateY(calc(-100% - 4px));transition:transform .18s}
 .ch #top{transform:none}
 #top button{border-color:transparent;background:color-mix(in srgb,var(--fg) 8%,transparent);padding:8px 14px}
 #top span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-weight:600;letter-spacing:-.1px}
@@ -145,7 +145,7 @@ i.k,i.w,i.m{font-style:normal}.m{display:none}
 
 #rd.nocur,#rd.nocur *{cursor:none!important}
 /* oled care (night theme): pure black, dimmer text/images/hover, no big bright blocks, bars drift 1-2px every minute (see oledShift) */
-#top,#bot,#lib header,#hint{translate:var(--sx,0px) var(--sy,0px)}
+.ch #top,#bot,#lib header,#hint{translate:var(--sx,0px) var(--sy,0px)}
 :root[data-theme=night] button:hover,:root[data-theme=night] #top button:hover,:root[data-theme=night] button:focus-visible{background:#151515;color:var(--fg);border-color:var(--mut)}
 :root[data-theme=night] .cv img{filter:brightness(.7)}
 :root[data-theme=night] .pop{border-color:#2a2a2a}
