@@ -20,7 +20,7 @@ epub.js 0.3.93 (from jsdelivr: cdnjs only has the old 0.2.x), pdf.js 3.11.174, J
 - real page count: every chapter is rendered once in a hidden copy of the reader with the current styles and its columns counted. shows `counting 12/40` until done, cached per style+size in the book's metadata. scroll mode has no pages, so it shows percent only
 - night theme is oled-friendly: pure black, text `#bdbdbd`, dimmed images/pdf/highlights, dark hover states, bars (and library header) drift 0-2px every minute, the top bar hides itself 8s after it appears
 - dictionary import keeps every entry per word (noun, verb, ...) and merges with what is stored, so re-importing is safe
-- search in book (`/`), offline word definitions (`d` or select a word in an epub), epub highlights
+- search in book (`/`): jumping to a result flashes the matched words for ~2s (epub and pdf), then they fade; offline word definitions (`d` or select a word in an epub), epub highlights
 - library states: unread / reading / finished (`e`, or automatic at 98%), filter (`f`) and sort (`o`), synced
 - saved words (`s` on a definition, `W` for the list): keeps the definition, the sentence and the book, exports a tsv for Anki, synced
 - flashcard review (`R`): spaced schedule (again / good / easy), keyboard or touch, progress synced with the words

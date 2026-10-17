@@ -591,7 +591,18 @@ async function draw(o={}){
   rt=p.render({canvasContext:c.getContext('2d'),viewport:v});try{await rt.promise}catch(e){return}
   if(my!==drawId)return;
   cur.pos=pg;cur.pct=pg/pdf.numPages;cur.pu=Date.now();autoFin();putM(cur);upd();
-  buildText(p,vcss,my).then(()=>{if(my!==drawId)return;markHits();if(o.reveal){const s=document.querySelector('#tl span.hit');if(s)s.scrollIntoView({block:'center',inline:'center'})}}).catch(()=>{})}
+  buildText(p,vcss,my).then(()=>{if(my!==drawId)return;
+    if(o.reveal){markHits();const s=document.querySelector('#tl span.hit');if(s)s.scrollIntoView({block:'center',inline:'center'});
+      clearTimeout(hitT);hitT=setTimeout(()=>document.querySelectorAll('#tl span.hit').forEach(x=>x.classList.remove('hit')),2200)}}).catch(()=>{})}
+let hitT;
+/* epub: flash the matched words for ~2s after jumping to a search result */
+let flashC=null,flashT;
+function flashHit(cfi){
+  clearTimeout(flashT);
+  if(flashC){try{rend.annotations.remove(flashC,'highlight')}catch(e){}flashC=null}
+  if(!rend||!cur||cur.type!=='epub'||hlShown[cfi])return;
+  try{rend.annotations.highlight(cfi,{},null,'srchit',{fill:S.theme==='night'?'#d9a400':'#ff9500','fill-opacity':'.55','mix-blend-mode':S.theme==='night'?'normal':'multiply'});flashC=cfi}catch(e){return}
+  flashT=setTimeout(()=>{try{rend&&rend.annotations.remove(cfi,'highlight')}catch(e){}flashC=null},2200)}
 /* selectable text, built word by word from pdf.js's raw text items (not combined into lines), so justified text and
    word spacing cannot push the selectable boxes away from the words you see */
 async function buildText(p,vcss,my){
@@ -1248,7 +1259,7 @@ function renderSR(){
   p.querySelectorAll('a').forEach(a=>a.onclick=()=>gotoRes(+a.dataset.i,true))}
 function gotoRes(i,close){
   if(!SR.items.length)return;if(!SR.jumped){pushJump();SR.jumped=true}SR.i=(i+SR.items.length)%SR.items.length;const r=SR.items[SR.i];
-  if(cur.type==='pdf'){pg=r.loc;draw({edge:'start',reveal:true})}else rend.display(r.loc);
+  if(cur.type==='pdf'){pg=r.loc;draw({edge:'start',reveal:true})}else rend.display(r.loc).then(()=>sleep(250)).then(()=>flashHit(r.loc)).catch(()=>{});
   document.querySelectorAll('#sr a').forEach((a,j)=>a.classList.toggle('cur',j===SR.i));
   if(close)$('#sr').classList.remove('o')}
 sq.onkeydown=e=>{
