@@ -143,6 +143,7 @@ button:active{transform:none}
 .dn{position:absolute;top:34px;left:4px;padding:0 6px;line-height:20px;background:rgba(0,0,0,.55);color:#fff;border:0;opacity:0}.card:hover .dn,.dn:focus{opacity:1}@media(hover:none){.dn{opacity:.8}}.card.done .dn{opacity:1;background:var(--fg);color:var(--bg)}
 i.k,i.w,i.m{font-style:normal}.m{display:none}
 
+#rd.nocur,#rd.nocur *{cursor:none!important}
 /* oled care (night theme): pure black, dimmer text/images/hover, no big bright blocks, bars drift 1-2px every minute (see oledShift) */
 #top,#bot,#lib header,#hint{translate:var(--sx,0px) var(--sy,0px)}
 :root[data-theme=night] button:hover,:root[data-theme=night] #top button:hover,:root[data-theme=night] button:focus-visible{background:#151515;color:var(--fg);border-color:var(--mut)}
@@ -533,16 +534,17 @@ async function openBook(id){
     cur.type==='pdf'?await openPdf(d.buf):await openEpub(d.buf);
   }catch(e){toast('could not open this book');back()}}
 async function back(){
+  clearTimeout(curT);setCur(false);
   try{rend&&rend.destroy();book&&book.destroy();pdf&&pdf.destroy()}catch(e){}
   rend=book=pdf=null;$('#viewer').innerHTML='';$('#viewer').style.cssText='';$('#stage').style.cssText='';ANCH=LOC=null;laying=false;clearTimeout(rzT);clearTimeout(pcT);PCTOK++;PG={sig:'',cnt:[],done:false};pdfTxt={};SR={q:'',items:[],i:-1};hlShown={};LASTSEL=null;JUMPS=[];OUTL=[];PD={};PSEL=null;$('#jb').classList.remove('o');autoSync();rd.style.display='none';$('#lib').style.display='';closePops();lib()}
 const styleHook=c=>{
   const st=c.document.createElement('style');
-  st.textContent='html,body{background:var(--bg)!important;color:var(--fg)!important;line-height:var(--lh)!important}body *{color:inherit!important;background-color:transparent!important}body,body *:not(pre):not(code){font-family:var(--ff)!important;font-weight:var(--fw)!important;letter-spacing:var(--ls)!important;word-spacing:var(--ws)!important;text-align:var(--jt)!important}p,li{margin-bottom:var(--ps)!important}a,a *{color:var(--ln)!important;font-weight:var(--fw)!important}img,svg{max-width:100%!important}img{max-height:92vh!important;object-fit:contain;filter:brightness(var(--img,1))}';
+  st.textContent='html,body{background:var(--bg)!important;color:var(--fg)!important;line-height:var(--lh)!important}body *{color:inherit!important;background-color:transparent!important}body,body *:not(pre):not(code){font-family:var(--ff)!important;font-weight:var(--fw)!important;letter-spacing:var(--ls)!important;word-spacing:var(--ws)!important;text-align:var(--jt)!important}p,li{margin-bottom:var(--ps)!important}a,a *{color:var(--ln)!important;font-weight:var(--fw)!important}img,svg{max-width:100%!important}img{max-height:92vh!important;object-fit:contain;filter:brightness(var(--img,1))}html.nocur,html.nocur *{cursor:none!important}';
   c.document.head.appendChild(st);applyC(c)};
 async function openEpub(buf){
   book=ePub(buf);LOC=null;ANCH=cur.pos||null;PG={sig:'',cnt:[],done:false};
   fitView();rend=book.renderTo('viewer',{width:BOX.w,height:BOX.h,flow:S.scroll?'scrolled-doc':'paginated',spread:'none'});
-  rend.hooks.content.register(c=>{styleHook(c);addSwipe(c.document);c.document.addEventListener('keydown',key);c.document.addEventListener('click',e=>contentClick(e,c),true)});
+  rend.hooks.content.register(c=>{styleHook(c);if(curHid)c.document.documentElement.classList.add('nocur');c.document.addEventListener('mousemove',curMove);c.document.addEventListener('mousedown',curMove);addSwipe(c.document);c.document.addEventListener('keydown',key);c.document.addEventListener('click',e=>contentClick(e,c),true)});
   rend.themes.fontSize(S.size+'px');syncPanel();
   rend.on('relocated',l=>{
     LOC=l;if(laying)return;                       // reflow noise never touches the saved position
@@ -1273,6 +1275,20 @@ let chT;new MutationObserver(()=>{
     const ae=document.activeElement;
     if(!anyPop()&&!(ae&&ae.matches&&ae.matches('input')))rd.classList.remove('ch')},8000)
 }).observe(rd,{attributes:true,attributeFilter:['class']});
+
+/* hide the mouse cursor while reading: after 2.5s without movement (not while bars or popups are open). any move/click brings it back */
+let curT,curHid=false,curXY='';
+function setCur(h){
+  if(curHid===h)return;curHid=h;rd.classList.toggle('nocur',h);
+  if(rend)try{rend.getContents().forEach(c=>c.document.documentElement.classList.toggle('nocur',h))}catch(e){}}
+function curMove(e){
+  const k=e&&e.screenX!=null?e.screenX+','+e.screenY:'';
+  if(e&&e.type==='mousemove'&&k===curXY)return;       // layout changes fire fake moves under a still cursor
+  curXY=k;setCur(false);clearTimeout(curT);
+  if(rd.style.display!=='flex')return;
+  const arm=()=>{if(rd.style.display!=='flex')return;if(anyPop()||rd.classList.contains('ch'))curT=setTimeout(arm,2500);else setCur(true)};
+  curT=setTimeout(arm,2500)}
+document.addEventListener('mousemove',curMove);document.addEventListener('mousedown',curMove);
 
 /* android back button: while the reader or any popup is open there is exactly one extra history entry, so back closes popups first,
    then returns to the library, then (from the library) leaves the app. the entry is added/removed automatically as the UI changes. */
