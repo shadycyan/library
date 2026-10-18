@@ -15,10 +15,11 @@ In a Claude artifact preview it runs, but sync and the service worker are blocke
 epub.js 0.3.93 (from jsdelivr: cdnjs only has the old 0.2.x), pdf.js 3.11.174, JSZip 3.10.1. Books live in IndexedDB; settings in localStorage. Sync uses the GitHub contents API with a fine-grained PAT (Contents: read and write, scoped to the one repo), stored in localStorage on the device.
 
 ## features
-- library with covers and progress; epub (paged or scroll) and pdf; light / warm / night themes; typography settings
+- library with covers and progress; epub (paged or scroll) and pdf; five themes (`1`-`5`): light, warm (calm light), calm (calm dark, apple books style), night (dimmed black), black (full-brightness black); typography settings
 - status bar (`b`): epub shows `p.123 / 410 · 31%`, pdf shows `page / pages`. there is no slider; jump with `:42%`, `:ch 3`, contents, search, or `B` to go back
 - real page count: every chapter is rendered once in a hidden copy of the reader with the current styles and its columns counted. shows `counting 12/40` until done, cached per style+size in the book's metadata. scroll mode has no pages, so it shows percent only
-- night theme is oled-friendly: pure black, text `#bdbdbd`, dimmed images/pdf/highlights, dark hover states, bars (and library header) drift 0-2px every minute, the top bar hides itself 8s after it appears
+- night and black are oled-friendly (`data-oled` on the root): pure black, dark hover states, bars (and library header) drift 0-2px every minute, the top bar hides itself 8s after it appears. night also dims text (`#bdbdbd`), images, pdf and highlights; black keeps the original `#e6e6e6`
+- ui font is Geist (sans) with Geist Mono for the status bar, command prompt and help, loaded from google fonts; offline it falls back to system fonts unless `sw.js` caches them
 - dictionary import keeps every entry per word (noun, verb, ...) and merges with what is stored, so re-importing is safe
 - search in book (`/`): jumping to a result flashes the matched words for ~2s (epub and pdf), then they fade; offline word definitions (`d` or select a word in an epub), epub highlights
 - library states: unread / reading / finished (`e`, or automatic at 98%), filter (`f`) and sort (`o`), synced

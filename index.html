@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;600&family=Literata:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -19,6 +19,8 @@
 :root{--bg:#fff;--fg:#1c1c1e;--mut:#8a8a8e;--ui:#f4f4f6;--ln:#0a60d0;--bd:#e3e3e7;--img:1;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 :root[data-theme=warm]{--bg:#f4ecd8;--fg:#5b4636;--mut:#9a8670;--ui:#ebe1c8;--ln:#8a5a2b;--bd:#dccfb0}
 :root[data-theme=night]{--bg:#000;--fg:#bdbdbd;--mut:#6a6a6a;--ui:#0a0a0a;--ln:#8c8c8c;--bd:#1c1c1c;--img:.75;color-scheme:dark}
+:root[data-theme=black]{--bg:#000;--fg:#e6e6e6;--mut:#777;--ui:#101010;--ln:#bdbdbd;--bd:#222;--img:1;color-scheme:dark}
+:root[data-theme=calm]{--bg:#26231f;--fg:#cfc7b6;--mut:#8b8272;--ui:#2e2a25;--ln:#d09a5f;--bd:#3b362f;--img:.92;color-scheme:dark}
 html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:15px/1.4 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
@@ -81,38 +83,41 @@ hr{border:0;border-top:1px solid var(--bd);margin:12px 0}
 #tl span{position:absolute;white-space:pre;color:transparent;transform-origin:0 0;cursor:text}
 #tl span.hit{background:rgba(255,196,0,.45)}
 #tl ::selection{background:rgba(10,96,208,.3)}
-:root[data-theme=night] #tl ::selection{background:rgba(255,255,255,.2)}
-:root[data-theme=night] #tl span.hit{background:rgba(255,196,0,.28)}
+:root[data-oled] #tl ::selection{background:rgba(255,255,255,.2)}
+:root[data-theme=calm] #tl ::selection{background:rgba(208,154,95,.3)}
+:root[data-oled] #tl span.hit,:root[data-theme=calm] #tl span.hit{background:rgba(255,196,0,.28)}
 :root[data-theme=warm] #cv{mix-blend-mode:multiply;filter:sepia(.25)}
 :root[data-theme=night] #cv{filter:invert(1) brightness(.8)}
-#bot{background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(20px) saturate(1.6);-webkit-backdrop-filter:blur(20px) saturate(1.6);border-top:1px solid var(--bd);padding:6px 16px calc(6px + env(safe-area-inset-bottom,0px));font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--mut)}
+:root[data-theme=black] #cv{filter:invert(1)}
+:root[data-theme=calm] #cv{mix-blend-mode:screen;filter:invert(1) sepia(.3) brightness(.82)}
+#bot{background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(20px) saturate(1.6);-webkit-backdrop-filter:blur(20px) saturate(1.6);border-top:1px solid var(--bd);padding:6px 16px calc(6px + env(safe-area-inset-bottom,0px));font:12px var(--mono);color:var(--mut)}
 #bot div{display:flex;justify-content:space-between;gap:12px}
 #bot div span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #rd:not(.pdf) #bot{position:absolute;left:0;right:0;bottom:0;z-index:4}
 .pop{position:absolute;z-index:6;top:calc(56px + env(safe-area-inset-top,0px));right:12px;background:var(--bg);border:1px solid var(--bd);border-radius:16px;padding:10px 14px;box-shadow:0 16px 40px rgba(0,0,0,.25);display:none;flex-direction:column;gap:2px;max-height:75vh;overflow:auto}
 .pop.o{display:flex}
-.row{display:flex;gap:8px}.row button{flex:1}
+.row{display:flex;flex-wrap:wrap;gap:8px}.row button{flex:1 1 40%}.row button.on{outline:2px solid var(--fg);outline-offset:-2px}
 #pan{width:270px}
 #toc{left:12px;right:auto;max-height:65vh;overflow:auto;min-width:240px;max-width:80vw;gap:2px}
 #toc a{padding:7px 8px;border-radius:6px;cursor:pointer;font-size:14px}#toc a:hover{background:var(--ui)}
-.t-light{background:#fff!important;color:#1c1c1e!important}.t-warm{background:#f4ecd8!important;color:#5b4636!important}.t-night{background:#000!important;color:#bdbdbd!important}
+.t-light{background:#fff!important;color:#1c1c1e!important}.t-warm{background:#f4ecd8!important;color:#5b4636!important}.t-night{background:#000!important;color:#bdbdbd!important}.t-black{background:#000!important;color:#e6e6e6!important}.t-calm{background:#26231f!important;color:#cfc7b6!important}
 .pdf .fr{display:none}
 #toast{position:fixed;left:50%;bottom:70px;transform:translateX(-50%);background:#000c;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;display:none;z-index:9}
 
 /* tui */
-:root{--mono:ui-monospace,"JetBrains Mono","Cascadia Mono",SFMono-Regular,Menlo,Consolas,monospace}
+:root{--mono:"Geist Mono",ui-monospace,"JetBrains Mono","Cascadia Mono",SFMono-Regular,Menlo,Consolas,monospace;--sans:Geist,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 *{border-radius:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-body,button,input,#lib h1,.cv,#def .hw{font-family:var(--mono)}
+body,button,input,#lib h1,.cv,#def .hw{font-family:var(--sans)}
 #lib h1{font-size:20px;font-weight:600;letter-spacing:0}
-button,#top button,.seg button{font:13px var(--mono);font-weight:400;padding:4px 10px;border:1px solid var(--bd);background:transparent;color:var(--fg);transition:none}
+button,#top button,.seg button{font:13px var(--sans);font-weight:400;padding:4px 10px;border:1px solid var(--bd);background:transparent;color:var(--fg);transition:none}
 button:hover,button:focus-visible,#top button:hover{background:var(--fg);color:var(--bg);border-color:var(--fg);outline:none}
 button:active{transform:none}
 .seg{padding:0;gap:0}.seg button{border:0;border-right:1px solid var(--bd)}.seg button.on{background:var(--fg);color:var(--bg)}
 .tgl i,.tgl i::after{border-radius:0!important}.tgl.on i{background:var(--fg)}
 .sl::-webkit-slider-thumb{border-radius:0;width:10px;height:16px;margin-top:-6px;box-shadow:none}.sl::-moz-range-thumb{border-radius:0}
 #top,#bot{background:var(--bg)}
-#lk{font:13px var(--mono);background:var(--bg);color:var(--fg);border:1px solid var(--bd);padding:4px 8px;width:170px;outline:none}#lk:focus{border-color:var(--fg)}
-#sq{font:13px var(--mono);background:var(--bg);color:var(--fg);border:1px solid var(--bd);padding:4px 8px;width:170px;outline:none}#sq:focus{border-color:var(--fg)}
+#lk{font:13px var(--sans);background:var(--bg);color:var(--fg);border:1px solid var(--bd);padding:4px 8px;width:170px;outline:none}#lk:focus{border-color:var(--fg)}
+#sq{font:13px var(--sans);background:var(--bg);color:var(--fg);border:1px solid var(--bd);padding:4px 8px;width:170px;outline:none}#sq:focus{border-color:var(--fg)}
 #sr a{padding:6px 8px;cursor:pointer;font-size:12px;display:block;border-bottom:1px solid var(--bd)}#sr a span{color:var(--mut)}#sr a:hover,#sr a.cur{background:var(--fg);color:var(--bg)}#sr a:hover span,#sr a.cur span{color:inherit}
 #hl a{padding:6px 8px;cursor:pointer;font-size:12px;display:block;border-bottom:1px solid var(--bd)}#hl a span{color:var(--mut)}#hl a:hover,#hl a.cur{background:var(--fg);color:var(--bg)}#hl a:hover span,#hl a.cur span{color:inherit}
 #hl a button{border:0;padding:0 4px;float:right}
@@ -144,15 +149,18 @@ button:active{transform:none}
 i.k,i.w,i.m{font-style:normal}.m{display:none}
 
 #rd.nocur,#rd.nocur *{cursor:none!important}
-/* oled care (night theme): pure black, dimmer text/images/hover, no big bright blocks, bars drift 1-2px every minute (see oledShift) */
+/* oled care (night + black themes): pure black, dimmer text/images/hover, no big bright blocks, bars drift 1-2px every minute (see oledShift) */
 .ch #top,#bot,#lib header,#hint{translate:var(--sx,0px) var(--sy,0px)}
-:root[data-theme=night] button:hover,:root[data-theme=night] #top button:hover,:root[data-theme=night] button:focus-visible{background:#151515;color:var(--fg);border-color:var(--mut)}
+:root[data-oled] button:hover,:root[data-oled] #top button:hover,:root[data-oled] button:focus-visible{background:#151515;color:var(--fg);border-color:var(--mut)}
 :root[data-theme=night] .cv img{filter:brightness(.7)}
-:root[data-theme=night] .pop{border-color:#2a2a2a}
-:root[data-theme=night] #cmd{border-top-color:#2a2a2a!important}
-:root[data-theme=night] #bot{color:#555}
-:root[data-theme=night] #sr a:hover,:root[data-theme=night] #sr a.cur,:root[data-theme=night] #hl a:hover,:root[data-theme=night] #hl a.cur,:root[data-theme=night] #cmdsug div:hover,:root[data-theme=night] #cmdsug div.cur{background:#1a1a1a;color:var(--fg)}
-:root[data-theme=night] #toast{background:#1a1a1ae6;color:var(--fg)}
+:root[data-oled] .pop{border-color:#2a2a2a}
+:root[data-oled] #cmd{border-top-color:#2a2a2a!important}
+:root[data-oled] #bot{color:#555}
+:root[data-oled] #sr a:hover,:root[data-oled] #sr a.cur,:root[data-oled] #hl a:hover,:root[data-oled] #hl a.cur,:root[data-oled] #cmdsug div:hover,:root[data-oled] #cmdsug div.cur{background:#1a1a1a;color:var(--fg)}
+:root[data-oled] #toast{background:#1a1a1ae6;color:var(--fg)}
+
+:root[data-theme=calm] button:hover,:root[data-theme=calm] #top button:hover,:root[data-theme=calm] button:focus-visible{background:#332f29;color:var(--fg);border-color:var(--mut)}
+:root[data-theme=calm] #sr a:hover,:root[data-theme=calm] #sr a.cur,:root[data-theme=calm] #hl a:hover,:root[data-theme=calm] #hl a.cur,:root[data-theme=calm] #cmdsug div:hover,:root[data-theme=calm] #cmdsug div.cur{background:#332f29;color:var(--fg)}
 
 @media(max-width:760px){
  .k,.w{display:none}.m{display:inline-block}
@@ -207,7 +215,7 @@ i.k,i.w,i.m{font-style:normal}.m{display:none}
   <div class="pop" id="hl" style="left:12px;right:auto;width:520px;max-width:92vw;gap:0"></div>
   <div class="pop" id="sr" style="left:12px;right:auto;width:520px;max-width:92vw;gap:0"></div>
   <div class="pop" id="pan">
-    <div class="row"><button class="t-light" data-t="light">[1] light</button><button class="t-warm" data-t="warm">[2] warm</button><button class="t-night" data-t="night">[3] night</button></div>
+    <div class="row"><button class="t-light" data-t="light">[1] light</button><button class="t-warm" data-t="warm">[2] warm</button><button class="t-calm" data-t="calm">[3] calm</button><button class="t-night" data-t="night">[4] night</button><button class="t-black" data-t="black">[5] black</button></div>
     <button class="tgl" id="k-awake" style="margin-top:8px"><span>[K] keep screen on</span><i></i></button>
     <div class="fr">
     <hr>
@@ -245,7 +253,7 @@ i.k,i.w,i.m{font-style:normal}.m{display:none}
   e                  finished on/off
   W                  saved words  R       review them
   :                  command prompt (:filter reading, :open title, ...)
-  1 2 3              light / warm / night
+  1-5                light / warm / calm / night / black
 
  reading
   j l space down right pgdn   next page
@@ -266,9 +274,10 @@ i.k,i.w,i.m{font-style:normal}.m{display:none}
   c         contents          a   appearance panel
   m         top bar           b   status bar (shows p.N / total and %)
   z         fullscreen        t   cycle theme
-  1 2 3     light / warm / night
+  1-5       light / warm / calm / night / black
   esc       close popup, then back to library
-  night     oled mode: pure black, dim text, bars drift 1-2px a minute
+  night     dimmed black, oled friendly. black = same, full brightness
+  oled      (night + black) bars drift 1-2px a minute
             and the top bar hides itself after a few seconds
 
  appearance (epub)
@@ -320,9 +329,10 @@ function relayout(delay=140){
     const a=ANCH||(LOC&&LOC.start&&LOC.start.cfi),b=BOX=measureBox();applyBox(b);
     try{rend.resize(b.w,b.h);await sleep(120);if(a)await rend.display(a)}catch(e){}
     await sleep(60);laying=false;upd();hlSoon(100);pageSoon(300)},delay)}
-function setTheme(t){S.theme=t;root.dataset.theme=t;document.querySelectorAll('[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+const THEMES=['light','warm','calm','night','black'],oled=()=>S.theme==='night'||S.theme==='black',darkT=()=>oled()||S.theme==='calm';
+function setTheme(t){S.theme=t;root.dataset.theme=t;root.toggleAttribute('data-oled',oled());document.querySelectorAll('[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
   $('meta[name=theme-color]').content=getComputedStyle(root).getPropertyValue('--bg').trim();oledShift();applyAll();save()}
-const cycle=()=>setTheme({light:'warm',warm:'night',night:'light'}[S.theme]);
+const cycle=()=>setTheme(THEMES[(THEMES.indexOf(S.theme)+1)%THEMES.length]);
 function setSize(d){S.size=Math.max(13,Math.min(32,S.size+d));applyAll();syncPanel();save()}
 function syncPanel(){
   document.querySelectorAll('#fontseg button').forEach(b=>b.classList.toggle('on',b.dataset.f===S.font));
@@ -338,7 +348,7 @@ $('#k-scroll').onclick=()=>{S.scroll=!S.scroll;if(rend){rend.flow(S.scroll?'scro
 
 /* oled care: in night, static ui (bars, library header) drifts a pixel or two every minute so nothing sits on the same subpixels for hours */
 function oledShift(){
-  const n=S.theme==='night',r=root.style,j=()=>(Math.floor(Math.random()*5)-2)+'px';
+  const n=oled(),r=root.style,j=()=>(Math.floor(Math.random()*5)-2)+'px';
   r.setProperty('--sx',n?j():'0px');r.setProperty('--sy',n?j():'0px')}
 setInterval(oledShift,60000);
 
@@ -603,7 +613,7 @@ function flashHit(cfi){
   clearTimeout(flashT);
   if(flashC){try{rend.annotations.remove(flashC,'highlight')}catch(e){}flashC=null}
   if(!rend||!cur||cur.type!=='epub'||hlShown[cfi])return;
-  try{rend.annotations.highlight(cfi,{},null,'srchit',{fill:S.theme==='night'?'#d9a400':'#ff9500','fill-opacity':'.55','mix-blend-mode':S.theme==='night'?'normal':'multiply'});flashC=cfi}catch(e){return}
+  try{rend.annotations.highlight(cfi,{},null,'srchit',{fill:darkT()?'#d9a400':'#ff9500','fill-opacity':'.55','mix-blend-mode':darkT()?'normal':'multiply'});flashC=cfi}catch(e){return}
   flashT=setTimeout(()=>{try{rend&&rend.annotations.remove(cfi,'highlight')}catch(e){}flashC=null},2200)}
 /* selectable text, built word by word from pdf.js's raw text items (not combined into lines), so justified text and
    word spacing cannot push the selectable boxes away from the words you see */
@@ -806,7 +816,7 @@ function key(e){
   else if(k==='Home'||k==='g')jump(-1);else if(k==='End'||k==='G')jump(1);
   else if(k==='c')$('#tb').click();else if(k==='a')$('#ab').click();else if(k==='b')toggleStat();else if(k==='?')toggleHelp();
   else if(k==='/')focusSearch();else if(k==='d')openQ('lk');else if(k==='n'&&SR.items.length)gotoRes(SR.i+1,false);else if(k==='N'&&SR.items.length)gotoRes(SR.i-1,false);else if(k==='H')addHL();else if(k==='v')openHL();else if(k==='p')toggleAnon(cur.id);else if(k==='P')toggleAnon(cur.id,true);else if(k==='e')toggleDone(cur.id);else if(k==='s')saveWord();else if(k==='W')openWL();else if(k==='B')jumpBack();else if(k==='K')toggleAwake();else if(k==='R')openReview();else if(k==='0'&&cur.type!=='pdf')resetStyle();else if(k===':')openCmd()
-  else if(k>='1'&&k<='3')setTheme(['light','warm','night'][k-1]);else if(cur.type==='pdf'&&k==='w')setFit('width');else if(cur.type==='pdf'&&k==='0')setFit('page');else if(typo(k)){}
+  else if(k>='1'&&k<='5')setTheme(THEMES[k-1]);else if(cur.type==='pdf'&&k==='w')setFit('width');else if(cur.type==='pdf'&&k==='0')setFit('page');else if(typo(k)){}
   else if(k==='+'||k==='=')cur.type==='pdf'?zoomBy(1.2):setSize(1);else if(k==='-')cur.type==='pdf'?zoomBy(1/1.2):setSize(-1);
   else h=false;
   if(h&&e.preventDefault)e.preventDefault()}
@@ -913,12 +923,12 @@ document.addEventListener('keydown',e=>{
   else if(k==='j'||k==='ArrowDown')go(cols);else if(k==='k'||k==='ArrowUp')go(-cols);
   else if(k==='Enter'&&!none)cs[li].click();else if(k==='x'&&!none)cs[li].querySelector('.x').click();else if(k==='p'&&!none)toggleAnon(cs[li].dataset.id);else if(k==='P'&&!none)toggleAnon(cs[li].dataset.id,true);else if(k==='e'&&!none)toggleDone(cs[li].dataset.id);else if(k==='f')cycleFilter();else if(k==='W')openWL();else if(k==='R')openReview();else if(k===':'){e.preventDefault();openCmd()}else if(k==='o')cycleSort();
   else if(k==='a')$('#file').click();else if(k==='s')$('#ghbtn').click();else if(k==='?')toggleHelp();
-  else if(k==='t')cycle();else if(k>='1'&&k<='3')setTheme(['light','warm','night'][k-1]);else if(k==='Escape')closeAll();else h=false;
+  else if(k==='t')cycle();else if(k>='1'&&k<='5')setTheme(THEMES[k-1]);else if(k==='Escape')closeAll();else h=false;
   if(h)e.preventDefault()});
 
 /* highlights (epub): stored per book as {id:{cfi,text,t,u,del}}; merged per highlight by newest u, deletes are tombstones, so no conflict prompt is ever needed */
 let LASTSEL=null,hlShown={};
-const HLS={light:{fill:'#ffd400','fill-opacity':'.4','mix-blend-mode':'multiply'},warm:{fill:'#e0a800','fill-opacity':'.35','mix-blend-mode':'multiply'},night:{fill:'#c9a400','fill-opacity':'.3','mix-blend-mode':'normal'}};
+const HLS={light:{fill:'#ffd400','fill-opacity':'.4','mix-blend-mode':'multiply'},warm:{fill:'#e0a800','fill-opacity':'.35','mix-blend-mode':'multiply'},night:{fill:'#c9a400','fill-opacity':'.3','mix-blend-mode':'normal'},black:{fill:'#ffd400','fill-opacity':'.35','mix-blend-mode':'normal'},calm:{fill:'#d9a400','fill-opacity':'.3','mix-blend-mode':'normal'}};
 /* epub.js draws marks in its 'render' hook, which runs BEFORE our 'content' hook applies font/margins/spacing, so a re-rendered page gets marks measured on the unstyled layout. redraw once styling has settled. */
 let hlT;const hlSoon=d=>{clearTimeout(hlT);hlT=setTimeout(renderHL,d)};
 function renderHL(){
@@ -1171,7 +1181,7 @@ const CMDS=[
  {n:'zoom',a:[],u:'<50-600>',d:'pdf zoom, in % of the page width',f:a=>{if(!needBook())return;if(cur.type!=='pdf')return toast('zoom is for pdfs. use :size for epubs');const v=num(a,50,600);if(v!=null)setZoom(v/100)}},
  {n:'fit',a:[],u:'width|page',d:'pdf: fit the page width or the whole page',f:a=>{if(!needBook())return;if(cur.type!=='pdf')return toast('fit is for pdfs');a=a.toLowerCase();if(a==='width'||a==='page')setFit(a);else toast('fit width or fit page')}},
  {n:'nohl',a:[],u:'',d:'clear search highlighting',f:()=>{SR={q:'',items:[],i:-1};markHits()}},
- {n:'theme',a:[],u:'light|warm|night',d:'set the theme (no argument: next)',f:a=>{a=a.toLowerCase();if(!a)cycle();else if(['light','warm','night'].includes(a))setTheme(a);else toast('themes: light, warm, night')}},
+ {n:'theme',a:[],u:'light|warm|calm|night|black',d:'set the theme (no argument: next)',f:a=>{a=a.toLowerCase();if(!a)cycle();else if(THEMES.includes(a))setTheme(a);else toast('themes: '+THEMES.join(', '))}},
  {n:'font',a:[],u:'serif|lit|sans|mono',d:'set the reading font',f:a=>{a=a.toLowerCase();if(a==='literata')a='lit';if(FONTS[a])styleSet('font',a);else toast('fonts: '+Object.keys(FONTS).join(', '))}},
  {n:'reset',a:[],u:'',d:'reset type and spacing to defaults',f:()=>resetStyle()},
  {n:'fullscreen',a:['fs'],u:'',d:'toggle fullscreen',f:()=>toggleFS()},
@@ -1271,7 +1281,7 @@ sq.onkeydown=e=>{
 /* oled care: in night the reader bars hide themselves a few seconds after they show up (static bars are what burns in) */
 let chT;new MutationObserver(()=>{
   clearTimeout(chT);
-  if(S.theme==='night'&&rd.classList.contains('ch'))chT=setTimeout(()=>{
+  if(oled()&&rd.classList.contains('ch'))chT=setTimeout(()=>{
     const ae=document.activeElement;
     if(!anyPop()&&!(ae&&ae.matches&&ae.matches('input')))rd.classList.remove('ch')},8000)
 }).observe(rd,{attributes:true,attributeFilter:['class']});
