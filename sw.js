@@ -1,7 +1,7 @@
 // app-shell cache so the app opens instantly and offline. books live in IndexedDB, untouched here.
 // shell files come from cache and refresh in the background (stale-while-revalidate), so a new deploy
 // shows up on the second load with no version bump needed.
-const CACHE = 'reader-shell-v4';
+const CACHE = 'reader-shell-v5';
 const SHARE = 'reader-shared'; // files shared into the app wait here until the page picks them up
 const SHELL = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png'].map(s => new URL(s, self.location).href);
 // only these hosts are cached at runtime (pinned library versions + fonts). github api responses are never cached.
